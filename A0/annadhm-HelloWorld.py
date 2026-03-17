@@ -8,7 +8,7 @@
     If no input file is given an Error message occurs and the program stops. 
     If no ouput file is given, the output will be printed on the terminal. 
 
-    Example output can be found in the helloWorld-test1.output file
+    Example output can be found in the expected_output.txt file:
 """
 
 import sys
