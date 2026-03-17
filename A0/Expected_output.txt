@@ -1,0 +1,9 @@
+to run the code the following command can be used:
+
+python AnesIms-HelloWorld.py HelloWorld-test1.in
+
+
+The expected output for A0 is:
+
+Hello World!
+That's all folks!
