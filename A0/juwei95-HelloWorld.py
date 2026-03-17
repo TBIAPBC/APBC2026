@@ -1,6 +1,8 @@
-print("Hello world!")
+import sys
 
-filename = "HelloWorld-test1.in"
+filename = sys.argv[1]
+
+print("Hello world!")
 
 with open (filename) as f:
     data = f.read()
