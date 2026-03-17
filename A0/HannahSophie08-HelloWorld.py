@@ -3,7 +3,6 @@ Run with: python HannahSophie08-HelloWorld.py input_file (if the input file is i
 otherwise give the file path)
 Output with HelloWorld-test1.out: 
 Hello World
-
 That's all folks!
 '''
 
