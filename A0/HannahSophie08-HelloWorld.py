@@ -10,7 +10,7 @@ That's all folks!
 
 import sys
 
-print("Hello World\n")
+print("Hello World")
 
 filename = sys.argv[1]
 
