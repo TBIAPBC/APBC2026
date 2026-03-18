@@ -11,11 +11,11 @@ This Python script reads the content of an input file and prints a "Hello World!
 
 
 ### Requirements:
-	- Python 3
+- Python 3
 	
 ### How to run:
 Run the script from the command line and provide an input file as an argument:
-	python anna-gst-HelloWorld.py inputfile
+		python anna-gst-HelloWorld.py inputfile
 
 ### Output files 
 You can save the output into a file using redirection:
