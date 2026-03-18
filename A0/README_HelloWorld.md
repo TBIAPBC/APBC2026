@@ -1,6 +1,7 @@
 # A0 - Hello World Assignment 
 
 Last update: 18.03.26
+
 Responsible Author: Anna Gsteu
 
 
