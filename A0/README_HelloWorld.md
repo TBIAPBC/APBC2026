@@ -21,4 +21,6 @@ python anna-gst-HelloWorld.py inputfil
 
 ### Output files 
 You can save the output into a file using redirection:
-	python anna-gst-HelloWorld.py inputfile > outputfile
+```
+python anna-gst-HelloWorld.py inputfile > outputfile
+```
