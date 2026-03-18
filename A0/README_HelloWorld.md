@@ -15,7 +15,9 @@ This Python script reads the content of an input file and prints a "Hello World!
 	
 ### How to run:
 Run the script from the command line and provide an input file as an argument:
-		python anna-gst-HelloWorld.py inputfile
+```
+python anna-gst-HelloWorld.py inputfil
+```
 
 ### Output files 
 You can save the output into a file using redirection:
