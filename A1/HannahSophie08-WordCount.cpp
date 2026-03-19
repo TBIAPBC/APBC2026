@@ -6,7 +6,8 @@
 using namespace std;
 
 
-string read_file(const string& filename) { //reads file (filename is passed as reference)
+//reads file 
+string read_file(const string& filename) { 
     
     ifstream file(filename); //open the file
 

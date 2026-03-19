@@ -1,7 +1,10 @@
 "HannahSophie08-WordCount.cpp" takes an input text file, reads the contents, counts the number of words as well as the number of different words and either outputs these counts or a list of the words with the respective count. The code is written in C++. 
 
-Compile: clang++ -std=c++14 HannahSophie08-WordCount.cpp -o HannahSophie08-WordCount
-Run the code: ./HannahSophie08-WordCount input.txt
+# Compile: 
+clang++ -std=c++14 HannahSophie08-WordCount.cpp -o HannahSophie08-WordCount
+
+# Run the code: 
+./HannahSophie08-WordCount input.txt
 
 # Options:
 - "-I" => Ignores uppercase characters and changes them to lowercase. When using this option "Hello" and "hello" are considered the same word
