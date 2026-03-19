@@ -37,10 +37,3 @@ clang++ -std=c++14 HannahSophie08-WordCount.cpp -o HannahSophie08-WordCount
 - C++ Version: C++14
 
 19.03.2026
-
-    
-
-
-
-
-=> C++14
