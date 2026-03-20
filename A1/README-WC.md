@@ -5,7 +5,7 @@ The Python script reads a text file (name given over the command line) and count
 Optionally it prints a sorted list of words and their frequencies and / or ignores case letters (The=the). 
 
 # REQUIREMENTS
-- Python 3.13 or hogher
+- Python 3.13 or higher
 - No external dependencies (only standatd library)
 
 # USED LIBRARIES
