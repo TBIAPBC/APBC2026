@@ -1,11 +1,14 @@
 import sys
 
 def hello(filename):
-    with open(filename) as f:
-        print('Hello World!')
-        file_content=f.read()
-        print(file_content.rstrip())
-        
+    try:
+        with open(filename) as f:
+            print('Hello World!')
+            file_content=f.read()
+            print(file_content.rstrip())
+    except:
+        print(f"Error reading the file \"{filename}\", make sure the file exists and the name is correct.")
+            
 if len(sys.argv)<2: 
     sys.exit("No input file specified")
 else:
