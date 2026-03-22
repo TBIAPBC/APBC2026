@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
 
     // no input file given
     if (filename.empty()) {
-        cerr << "Usage: " << argv[0] << " [-I] [l] <filename>" << endl;
+        cerr << "Usage: " << argv[0] << " [-I] [-l] <filename>" << endl;
         return 0; 
     }
 
