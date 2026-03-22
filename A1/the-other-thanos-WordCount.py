@@ -8,7 +8,7 @@ def WordCount(filename,l,I):
     with open (filename) as f:
         text=f.read()
            
-    words=re.split(r"[^A-Za-zÄäÖöÜüß]+",text)
+    words=re.split(r"[^\w]+",text)
 
     for word in words:
         if word:
