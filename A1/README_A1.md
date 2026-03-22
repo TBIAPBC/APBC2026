@@ -1,4 +1,4 @@
-#A1 Assignment, Word Count
+# A1 Assignment, Word Count
 A pythons script which uses command-line tools to count word frequencies in text files. It supports all languages and case insensitivity.
 
 ## Usage
