@@ -27,7 +27,7 @@ def WordCount(filename,l,I):
     
     if l:    
         for i in sorted_dict:
-            print(f'{i} {sorted_dict[i]}')
+            print(f'{i}\t{sorted_dict[i]}')
     else:
             print(f'{len(sorted_dict)} / {len(total_word_list)}')
     
