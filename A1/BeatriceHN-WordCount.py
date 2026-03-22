@@ -18,7 +18,7 @@ def CountWords(file, ignore_case=False, list=False):
         for word, count in word_list:
             print(f"{word} {count}")
         return 
-    return print(word_count['total'])
+    return print(f'{len(word_count)} / {word_count['total']}')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
