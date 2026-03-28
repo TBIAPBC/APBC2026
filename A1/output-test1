@@ -1,0 +1,5 @@
+compile: clang++ -std=c++14 HannahSophie08-WordCount.cpp -o HannahSophie08-WordCount
+run the code for test 1: "./HannahSophie08-WordCount WordCount-test1.in"
+output: 
+
+78 / 89
