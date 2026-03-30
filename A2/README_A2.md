@@ -60,9 +60,9 @@ python AnesIms-Administration.py  Administration-test1.in
 #### expected output default
 
 ```
-BI EG KS LP
-BI EP GK LS
-BI EP GL KS
+ BI EG KS LP
+ BI EP GK LS
+ BI EP GL KS
 ```
 
 ### Run with -o prints the best score
@@ -70,9 +70,9 @@ BI EP GL KS
 python AnesIms-Administration.py  Administration-test1.in -o
 
 #### Expected output -o 
-
-7
-
+```
+ 7
+```
 
 ### Run with -o and --out ; The best score will be saved in .out file 
 
@@ -86,8 +86,8 @@ python AnesIms-Administration.py  Administration-test1.in -o -s --out best_solut
 #### Expected output -o -s
 
 ```
-7
-BI EP GK LS
+ 7
+ BI EP GK LS
 ```
 
 ### Read from STDIN
@@ -96,7 +96,7 @@ python AnesIms-Administration.py < Administration-test1.in
 #### Expected output STDIN <
 
 ```
-BI EG KS LP
-BI EP GK LS
-BI EP GL KS
+ BI EG KS LP
+ BI EP GK LS
+ BI EP GL KS
 ```
