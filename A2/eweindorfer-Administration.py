@@ -1,5 +1,6 @@
 import argparse
-from typing import Dict, Iterable, List, Tuple
+from pdb import run
+from typing import ByteString, Dict, Iterable, List, Tuple
 
 
 #Parse the assignment input file into (cities, limit, cost_dict)
@@ -43,10 +44,10 @@ def parse_input(path: str) -> Tuple[List[str], int, Dict[Tuple[str, str], int]]:
     return cities, limit, cost
 
 
-def pair_cost(cost: Dict[Tuple[str, str], int], a: str, b: str) -> int:
+def pair_cost(costs: Dict[Tuple[str, str], int], a: str, b: str) -> int:
     """Returns the matrix cost for the unordered pair {a,b}"""
     key = (a, b) if a < b else (b, a)
-    return cost[key]
+    return costs[key]
 
 
 def canonical_solution_string(pairs: List[Tuple[str, str]]) -> str:
@@ -58,17 +59,29 @@ def canonical_solution_string(pairs: List[Tuple[str, str]]) -> str:
     city_pairs.sort()
     return " ".join(city_pairs)
 
+def find_cheapest_pair(costs: Dict[Tuple[str, str], int]) -> int:
+    """Returns the cheapest cost in our matrix to serve as a basic lower bound cost"""
+    return min(costs.values())
 
-def enumerate_solutions(
-    cities: List[str], limit: int, costs: Dict[Tuple[str, str], int]
-) -> Iterable[str]:
-    """Gets canonical solution strings for all partitions with total cost <= limit"""
+def compute_solutions(cities: List[str], limit: int, costs: Dict[Tuple[str, str], int], o: bool):
+    """If o: Gets lowest cost of all valid solutions
+    If not o: Gets canonical solution strings for all valid solutions
+    Valid solution = any solution with total cost <= limit"""
+    cheapest_cost = find_cheapest_pair(costs)
+    best = limit
 
     def rec(remaining_cities: List[str], chosen: List[Tuple[str, str]], running_cost: int):
-        if running_cost > limit:
+        nonlocal best
+        remaing_pairs = len(remaining_cities) /2
+        if o:
+            if running_cost + remaing_pairs * cheapest_cost > best:
+                return
+        elif running_cost + remaing_pairs * cheapest_cost > limit:
             return
+
         if not remaining_cities:
-            yield canonical_solution_string(chosen)
+            best = running_cost if running_cost < best else best            
+            yield best if o else canonical_solution_string(chosen)
             return
 
         # Fix the first remaining city to avoid duplicates.
@@ -76,48 +89,13 @@ def enumerate_solutions(
         for i in range(1, len(remaining_cities)):
             second = remaining_cities[i]
             c = pair_cost(costs, first, second)
-            next_running_cost = running_cost + c
-            if next_running_cost > limit:
-                continue
-
+            next_running_cost = running_cost + c 
             next_remaining = remaining_cities[1:i] + remaining_cities[i + 1 :]
             chosen.append((first, second))
             yield from rec(next_remaining, chosen, next_running_cost)
             chosen.pop()
 
     yield from rec(cities, [], 0)
-
-
-def optimize(cities: List[str], limit: int, cost: Dict[Tuple[str, str], int]) -> int:
-    """Branch-and-bound search for the minimum total cost"""
-    best = limit
-    found_any = False
-
-    #recursive function
-    def rec(remaining_cities: List[str], running_cost: int):
-        nonlocal best, found_any
-        if running_cost >= best:
-            return
-        if not remaining_cities:
-            found_any = True
-            best = running_cost
-            return
-
-        #iteratively try all pairs for the city at position 0
-        first = remaining_cities[0]
-        for i in range(1, len(remaining_cities)):
-            second = remaining_cities[i]
-            c = pair_cost(cost, first, second)
-            next_running_cost = running_cost + c
-            if next_running_cost >= best:
-                continue
-            
-            #when we find a possible pair we go deeper in the branch and continue with the reduced list of cities
-            next_remaining = remaining_cities[1:i] + remaining_cities[i + 1 :]
-            rec(next_remaining, next_running_cost)
-
-    rec(cities, 0)
-    return best if found_any else None
 
 
 def main():
@@ -132,17 +110,16 @@ def main():
 
     cities, limit, cost = parse_input(args.filename)
 
-    if args.o:
-        print(optimize(cities, limit, cost))
-        return
 
-    solutions = sorted(enumerate_solutions(cities, limit, cost))
-    if not solutions:
-        print("No solutions found")
-        return
-        
-    for s in solutions:
-        print(s)
+    solution_output = sorted(compute_solutions(cities, limit, cost, args.o))
+
+    if not solution_output:
+        print("No solution found")
+    elif args.o:
+        print(solution_output[0])
+    else:
+        for s in solution_output:
+            print(s)
 
 
 if __name__ == "__main__":
