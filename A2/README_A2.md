@@ -54,8 +54,9 @@ The input file must either be located in the current working directory or the fu
 ## Example Usage
 
 ### Default run
-
-python AnesIms-Administration.py  Administration-test1.in
+```
+  python AnesIms-Administration.py  Administration-test1.in
+```
 
 #### expected output default
 
@@ -66,8 +67,9 @@ python AnesIms-Administration.py  Administration-test1.in
 ```
 
 ### Run with -o prints the best score
-
-python AnesIms-Administration.py  Administration-test1.in -o
+```
+  python AnesIms-Administration.py  Administration-test1.in -o
+```
 
 #### Expected output -o 
 ```
@@ -75,14 +77,14 @@ python AnesIms-Administration.py  Administration-test1.in -o
 ```
 
 ### Run with -o and --out ; The best score will be saved in .out file 
-
-python AnesIms-Administration.py  Administration-test1.in -o --out best_cost_test1.out
-
+```
+  python AnesIms-Administration.py  Administration-test1.in -o --out best_cost_test1.out
+```
 
 ### Run with -o -s and --out to save the best score and the corresponding best solution
-
-python AnesIms-Administration.py  Administration-test1.in -o -s --out best_solution1.out
-
+```
+  python AnesIms-Administration.py  Administration-test1.in -o -s --out best_solution1.out
+```
 #### Expected output -o -s
 
 ```
@@ -91,8 +93,9 @@ python AnesIms-Administration.py  Administration-test1.in -o -s --out best_solut
 ```
 
 ### Read from STDIN
-python AnesIms-Administration.py < Administration-test1.in                             
-
+```
+  python AnesIms-Administration.py < Administration-test1.in                             
+```
 #### Expected output STDIN <
 
 ```
