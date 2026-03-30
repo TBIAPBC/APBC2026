@@ -59,10 +59,11 @@ python AnesIms-Administration.py  Administration-test1.in
 
 #### expected output default
 
+```
 BI EG KS LP
 BI EP GK LS
 BI EP GL KS
-
+```
 
 ### Run with -o prints the best score
 
@@ -84,15 +85,18 @@ python AnesIms-Administration.py  Administration-test1.in -o -s --out best_solut
 
 #### Expected output -o -s
 
+```
 7
 BI EP GK LS
-
+```
 
 ### Read from STDIN
 python AnesIms-Administration.py < Administration-test1.in                             
 
 #### Expected output STDIN <
 
+```
 BI EG KS LP
 BI EP GK LS
 BI EP GL KS
+```
