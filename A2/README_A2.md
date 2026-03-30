@@ -26,8 +26,8 @@ For each partition we print a canonical string:
 # Run Script
 Command format: python eweindorfer-Administration.py [-o] <input_file>
 
--Default mode: enumerate all partitions with total cost <= limit and print all solutions
--Optimization mode (-o): only find and print best possible score.
+- Default mode: enumerate all partitions with total cost <= limit and print all solutions
+- Optimization mode (-o): only find and print best possible score.
 
 example command:
 python eweindorfer-Administration.py -o Administration-test1.in
