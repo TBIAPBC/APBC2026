@@ -1,5 +1,8 @@
 import sys
+from math import inf
 
+
+# Input
 
 lines = sys.stdin.readlines()
 
@@ -16,38 +19,53 @@ for i, line in enumerate(lines[2:]):
             value.update({capital_names[j]: int(cost)})
     costs.update({key: value})
 
+dash_o = "-o" in sys.argv
 
+# Type definitions
 Pairing = tuple[str, str]
 Solution = list[Pairing]
 PairingCosts = dict[str, dict[str, int]]
-Node = list[Pairing]
+Node = list[Pairing] # node state: list of commited captital pairings at that node of the tree
 Stack = list[Node]
 
-
-def cost(node: Node) -> int:
-    total = 0
-    for pairing in node:
-        total += costs[pairing[0]][pairing[1]]
-    return total
-
 def optimize() -> list[Solution]:
-    # node state: list of commited captital pairings at that node of the tree 
+    """
+    Perform a depth-first search over all possible capital pairings.
+    For each valid complete pairing, it records the solution and 
+    updates the best (lowest) cost found.
+    """
+
+    best = inf
+    best_node = None
     stack  = [] 
     result = []
     stack.append([])
     while stack:
         node = stack.pop()
-        if cost(node) <= cost_limit:
-            if len(node) == num_capitals//2:
-                result.append(node)
-            else:
-                stack.extend(split(node))
+        node_cost = calc_node_cost(node)
+        if node_cost <= cost_limit:
+            if node_cost < best or not dash_o:
+                if len(node) == num_capitals//2:
+                    result.append(node)
+                    best = node_cost
+                    best_node = node
+                else:
+                    stack.extend(split(node))
     result.reverse()
-    return result
+    if dash_o:
+        return [best_node]
+    else:
+        return result
+
+def calc_node_cost(node: Node) -> int:
+    total = 0
+    for pairing in node:
+        total += costs[pairing[0]][pairing[1]]
+    return total
 
 def split(node: Node) -> list[Node]:
     result = []
-    # name lex > erster buchstabe, letztes tupel in der node
+    # name lex > first character of last tuple in node
     remaining_names = list(filter(lambda name: not node or name > node[-1][0], capital_names))
     for names in node:
         if names[0] in remaining_names:
@@ -62,24 +80,18 @@ def split(node: Node) -> list[Node]:
             result.append(new_node)
     return result
 
-
 def format_solutions(solutions: list[Solution]) -> str:
-    result = ""
+    result = []
     for solution in solutions:
-        for pairing in solution:
-            result += pairing[0] + pairing[1] + " "
-        result += "\n"
-    return result
+        pair = ""
+        if dash_o:
+            pair += str(calc_node_cost(solution))
+        else:
+            for pairing in solution:
+                pair += (pairing[0] + pairing[1] + " ")
+        result.append(pair)
+    return "\n".join(result)
 
-
-
+# Run the algorithm
 opt = optimize()
 print(format_solutions(opt))
-# print(opt)
-print(len(opt))
-
-# TODO:
-# -o flag
-# refactor
-# fix print new line
-# make readme
