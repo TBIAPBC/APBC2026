@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import argparse
 file = "Administration-test1.in"
 
 def parse_administration(file):
@@ -48,15 +48,24 @@ def parse_administration(file):
         return authority_cost, cost_limit, capital_list
 
 
-def find_pairings(unpaired, graph, budget, current_pairs=None, current_cost=0):
+def find_pairings(unpaired, graph, budget, current_pairs=None, current_cost=0, optimize=False, best_cost=None):
     
     # initialize 
     if current_pairs is None:
         current_pairs = []
 
+    
+    # initialize best_cost (only once at top call)
+    if optimize and best_cost is None:
+        best_cost = [budget]  # use list to make it mutable
+
     # base case: no cities left
     if len(unpaired) == 0:
-        return [current_pairs]
+        if optimize:
+            best_cost[0] = min(best_cost[0], current_cost)
+            return best_cost
+        else:
+            return [current_pairs]
 
     results = []
 
@@ -81,7 +90,9 @@ def find_pairings(unpaired, graph, budget, current_pairs=None, current_cost=0):
         new_cost = current_cost + cost
 
         # prune to expensive branches 
-        if new_cost > budget - min_remaining_cost:
+        limit = best_cost[0] if optimize else budget
+
+        if new_cost > limit - min_remaining_cost:
             continue
 
         # update list of unpaired cities
@@ -93,14 +104,45 @@ def find_pairings(unpaired, graph, budget, current_pairs=None, current_cost=0):
             graph,
             budget,
             current_pairs + [(city_a, city_b)],
-            new_cost
+            new_cost,
+            optimize,
+            best_cost
         )
 
-    return results
+    return best_cost if optimize else results
+
+
+def format_solution(pairs):
+    # sort each pair internally (BE not EB)
+    normalized = [tuple(sorted(pair)) for pair in pairs]
+    
+    # sort pairs lexicographically
+    normalized.sort()
+    
+    # convert to string like "BE GI KL SP"
+    return " ".join(a + b for a, b in normalized)
+
 
 if __name__ == "__main__":
-    file = "Administration-test1.in"
-    authority_cost, cost_limit, capital_list = parse_administration(file)
+    parser = argparse.ArgumentParser(description="Administration optimization")
+    parser.add_argument("file", help="Input file")
+    parser.add_argument("-o", action="store_true", help="Optimize instead of enumerate")
 
-    authorities = find_pairings(capital_list, authority_cost, cost_limit)
-    print(authorities)
+    args = parser.parse_args()
+
+    authority_cost, cost_limit, capital_list = parse_administration(args.file)
+
+    if args.o:
+        best_cost = find_pairings(capital_list, authority_cost, cost_limit, optimize=True)
+        print(best_cost[0])
+    else:
+        authorities = find_pairings(capital_list, authority_cost, cost_limit)
+
+        seen = set()
+
+        for solution in authorities:
+            formatted = format_solution(solution)
+            
+            if formatted not in seen:
+                seen.add(formatted)
+                print(formatted)
