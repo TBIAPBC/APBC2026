@@ -6,17 +6,15 @@ def get_administration(file):
     cost_df = pd.read_csv(file, skiprows=1, delimiter='\s+', na_values='-')
     cost_df.index = cost_df.columns
     cost_df = cost_df.astype(float)
-    cost_df.values[np.tril_indices(len(cost_df))] = np.nan
+    mask = np.tril(np.ones(cost_df.shape)).astype(bool)
+    cost_df = cost_df.where(~mask)
     meta_df = pd.read_csv(file, nrows=1, header=None, delimiter='\s+')
     meta_df.columns = ['City_nr', 'Budget']
     return meta_df, cost_df
 
 def get_valid_pairs(cost_df, budget):
-    budget_mask = cost_df < budget
-    cost_budget = cost_df[budget_mask]
-    logic_mask = cost_df <= (budget-len(cost_df)/2)
-    cost = cost_budget[logic_mask]
-    result = cost.stack(0)
+    logic_mask = (cost_df < budget) & (cost_df <= (budget - len(cost_df)/2))
+    result = cost_df[logic_mask].stack().dropna()
 
     valid_pairs = {}
     for city_1, city_2, cost in zip(result.index.get_level_values(0), result.index.get_level_values(1), result.values):
