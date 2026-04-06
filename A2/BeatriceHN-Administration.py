@@ -1,5 +1,3 @@
-from turtle import st
-
 import numpy as np
 import pandas as pd
 import argparse
@@ -15,7 +13,6 @@ def get_administration(file):
     return meta_df, cost_df, cost_df.columns.tolist()
 
 def get_valid_pairs(cost_df, budget):
-    print((len(cost_df)/2))
     logic_mask = (cost_df < budget) & (cost_df <= (budget - ((len(cost_df)/2)-1)))
     result = cost_df[logic_mask].stack().dropna()
 
@@ -24,9 +21,6 @@ def get_valid_pairs(cost_df, budget):
         if city_1 not in valid_pairs:
             valid_pairs[city_1] = []
         valid_pairs[city_1].append((city_2, cost))
-
-        
-    print(result)
     return valid_pairs
 
 def get_all_paths(valid_pairs, budget, cities, visited=None, bill=0, current_path=None, tracks=None):
@@ -47,8 +41,7 @@ def get_all_paths(valid_pairs, budget, cities, visited=None, bill=0, current_pat
 
     if city_1 is None:
         tracks.append((current_path.copy(), bill))
-        print(tracks)
-        return
+        return tracks
 
     visited.add(city_1)
 
@@ -58,21 +51,32 @@ def get_all_paths(valid_pairs, budget, cities, visited=None, bill=0, current_pat
         if bill + cost <= budget:
             visited.add(city_2)
             current_path.append((city_1 + city_2))
-            get_all_paths(valid_pairs, budget, cities, visited, bill + cost, current_path)
+            get_all_paths(valid_pairs, budget, cities, visited, bill + cost, current_path, tracks)
             current_path.pop()
             visited.remove(city_2)
 
     visited.remove(city_1)
-    
+
     return tracks
+
+def display_output(tracks, optimization=False):
+        if optimization:
+            min_bill = min(tracks, key=lambda x: x[1])[1]
+            opt_track = [t for t in tracks if t[1] == min_bill]
+            for cities, bill in opt_track:
+                print(' '.join(cities), bill)
+        else:
+            for cities, bill in tracks:
+                print(' '.join(cities))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file', type=argparse.FileType('r', encoding='utf-8'),
                          help='File with number of capitals, total budget and  matrix for cost of partition')
+    parser.add_argument('-o', '--optimization', action='store_true')
     args = parser.parse_args()
     meta_df, cost_df, cities = get_administration(args.file.name)
-    print(cost_df, meta_df)
     valid_pairs = get_valid_pairs(cost_df, meta_df['Budget'][0])
     tracks = get_all_paths(valid_pairs, meta_df['Budget'][0], cities)
+    display_output(tracks, optimization=args.optimization)
