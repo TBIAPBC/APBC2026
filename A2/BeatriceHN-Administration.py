@@ -59,12 +59,14 @@ def get_all_paths(valid_pairs, budget, cities, visited=None, bill=0, current_pat
 
     return tracks
 
-def display_output(tracks, optimization=False):
+def display_output(tracks, optimization=False, explicit=False):
         if optimization:
             min_bill = min(tracks, key=lambda x: x[1])[1]
-            opt_track = [t for t in tracks if t[1] == min_bill]
-            for cities, bill in opt_track:
-                print(' '.join(cities), bill)
+            print(min_bill)
+            if explicit:
+                opt_track = [t for t in tracks if t[1] == min_bill]
+                for cities, bill in opt_track:
+                    print(' '.join(cities))
         else:
             for cities, bill in tracks:
                 print(' '.join(cities))
@@ -75,8 +77,9 @@ if __name__ == '__main__':
     parser.add_argument('file', type=argparse.FileType('r', encoding='utf-8'),
                          help='File with number of capitals, total budget and  matrix for cost of partition')
     parser.add_argument('-o', '--optimization', action='store_true')
+    parser.add_argument('-e', '--explicit', action='store_true')
     args = parser.parse_args()
     meta_df, cost_df, cities = get_administration(args.file.name)
     valid_pairs = get_valid_pairs(cost_df, meta_df['Budget'][0])
     tracks = get_all_paths(valid_pairs, meta_df['Budget'][0], cities)
-    display_output(tracks, optimization=args.optimization)
+    display_output(tracks, optimization=args.optimization, explicit=args.explicit)
