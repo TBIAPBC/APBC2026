@@ -1,72 +1,72 @@
 import sys
 
 
-def paarungen(freie_staedte, aktuelle_paare, aktuelle_kosten):
-    k = len(freie_staedte)
+def pairings(free_cities, current_pairs, current_cost):
+    k = len(free_cities)
     global limit
     
     if k == 0:
         if optimize:
-            if aktuelle_kosten < limit:
-                limit = aktuelle_kosten
+            #define new limit, if one pairing has less costs
+            if current_cost < limit:
+                limit = current_cost
         else:
-            print_paare(sorted(aktuelle_paare))
+            print_pairs(sorted(current_pairs))
         return
 
-    erste = freie_staedte[0]
+    first = free_cities[0]
     
 
     for i in range(1, k):
-        partner = freie_staedte[i]
+        #pair with the next free city
+        partner = free_cities[i]
         
-        neue_kosten = aktuelle_kosten + kosten[erste][partner]
-        #jede Paarung kostet mindestens 1, die neue Paarung wurde noch nicht abgezogen
-        if neue_kosten > limit - (k-2)/2: continue
+        new_cost = current_cost + costs[first][partner]
+        #each pairing costs at least 1, the new pairing has not yet been subtracted
+        if new_cost > limit - (k - 2) / 2:
+            continue
         
-        paarungen(freie_staedte[1:i] + freie_staedte[i+1:], aktuelle_paare + [(erste, partner)], neue_kosten)
+        pairings(free_cities[1:i] + free_cities[i+1:], current_pairs + [(first, partner)], new_cost)
 
 
-def print_paare(paare):
-    teile = []
+def print_pairs(pairs):
+    parts = []
     
-    for a, b in paare:
-        teile.append(a + b)
+    for a, b in pairs:
+        parts.append(a + b)
     
-    print(" ".join(teile))
+    print(" ".join(parts))
 
 
-dateiname = sys.argv[1]    
+filename = sys.argv[1]   
+ 
 optimize = False
 if len(sys.argv) > 2 and sys.argv[2] == "-o":
     optimize = True
     
-with open(dateiname, "r", encoding="utf-8") as f:
-    zeilen = f.readlines()
+with open(filename, "r", encoding="utf-8") as f:
+    lines = f.readlines()
 
-# erste Zeile auswerten
-erste_zeile = zeilen[0].strip().split()
+first_line = lines[0].strip().split()
 
-n = int(erste_zeile[0])
-limit = int(erste_zeile[1])
+n = int(first_line[0]) #number of provinces
+limit = int(first_line[1]) #maximum cost
 
-# zweite Zeile
-staedte = zeilen[1].strip().split()
+cities = lines[1].strip().split()
 
-# Kostenmatrix als Dictionary
-kosten = {}
+#cost matrix as dictionary, only store upper triangular matrix
+costs = {}
 
-for i in range(2, len(zeilen)):
-    werte = zeilen[i].strip().split()
-    stadt = staedte[i-2]
+for i in range(2, len(lines)):
+    values = lines[i].strip().split()
+    city = cities[i - 2]
 
-    kosten[stadt] = {}
+    costs[city] = {}
 
-    #nur obere Dreiecksmatrix speichern ohne Diagonale
-    for j in range(i-1, len(werte)):
-        kosten[stadt][staedte[j]] = int(werte[j])
+    for j in range(i - 1, len(values)):
+        costs[city][cities[j]] = int(values[j])
         
         
-paarungen(staedte, [], 0)
+pairings(cities, [], 0)
 if optimize:
     print(limit)
-        
