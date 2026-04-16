@@ -72,8 +72,8 @@ def read_weights(filename, d):
     elif d and (len(lines)+2)%3 != 0:
         print(f"\033[91mInvalid Input: Number of rows for diagonal weight matrix has to total m-1 + m + m-1\033[0m")
         exit()
-        
     m = int((len(lines) + 1)/2) if not d else int((len(lines) + 2)/3) 
+
     down = []
     for i in range(0, m-1):
         new_line = parse_numbers(lines[i])
@@ -117,8 +117,8 @@ def print_weights(down, right, diag):
             print(row)
 
 def calculate_score_matrix(down, right, diag, t, debug=False):
-    m = len(right) # east-west nodes
-    n = len(down[0]) # north-south nodes
+    m = len(down) + 1 # north-south nodes
+    n = len(down[0]) # east-west nodes 
 
     # init m x n score matrix
     # score is a tuple of [score, direction], where direction keeps track of how we entered this node
@@ -140,7 +140,7 @@ def calculate_score_matrix(down, right, diag, t, debug=False):
             """
             e = [score_matrix[i][j-1][0] + right[i][j-1], 'E']
             s = [score_matrix[i-1][j][0] + down[i-1][j], 'S']
-            d = [score_matrix[i-1][j-1][0] + diag[i-1][j-1], 'D'] if diag else [0, 'x']
+            d = [score_matrix[i-1][j-1][0] + diag[i-1][j-1], 'D'] if diag else [-1, 'x']
             
             return max([e, s, d], key=lambda x: x[0]) # returns tuple with highest score
 
