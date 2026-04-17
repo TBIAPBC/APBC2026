@@ -58,7 +58,7 @@ def initialize_grid(down, right):
         memo.append(row)
     return memo
 
-def find_path(memo, down, right, diagonal):
+def find_path(memo, down, right, diagonal, args):
     n      = len(right)
     m      = len(down[0])
     queue = [memo[0][0]]
@@ -82,6 +82,17 @@ def find_path(memo, down, right, diagonal):
                 down_node.trace = 'S'
                 # remeber direction where we came from
                 queue.append(down_node)
+        if args.diagonal:
+            if current.row + 1 < n and current.column + 1 < m:
+            # if current.row + 1 < n - 1 and current.column + 1 < m - 1:
+                # print(current.row + 1, n)
+                diagonal_node = memo[current.row + 1][current.column + 1]
+                new_score = diagonal[current.row][current.column] + current.score
+                if new_score > diagonal_node.score:
+                    diagonal_node.score = new_score
+                    diagonal_node.trace = 'D'
+                    # remeber direction where we came from
+                    queue.append(diagonal_node)
     end_node = memo [-1][-1]
     return end_node
 
@@ -89,7 +100,7 @@ def main():
     args   = parse_args()
     down, right, diagonal = parse_matrix(args)
     memo = initialize_grid(down, right)
-    end_node = find_path(memo, down, right, diagonal)
+    end_node = find_path(memo, down, right, diagonal, args)
 
     # for i in memo:
     #     for j in i:
@@ -118,6 +129,7 @@ def main():
         path_str = map(lambda x: x.trace, path)
         path_str = ''.join(path_str)
         print(path_str)
+   
 
 
 
