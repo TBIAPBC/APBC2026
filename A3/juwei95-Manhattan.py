@@ -7,13 +7,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('filename')
     parser.add_argument('-t', '--trace',    action='store_true', help='print the best path')
     parser.add_argument('-d', '--diagonal', action='store_true', help='allow diagonal edge weights')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
-def parse_matrix(args: argparse.Namespace): # typehint?
-    down     = []
-    right    = []
-    diagonal = []
+Edges = list[list[float]]
+def parse_matrix(args: argparse.Namespace) -> tuple[Edges, Edges, Edges]:
+    down, right, diagonal = [], [], []
     with open(args.filename) as f:
         for line in f:
             if '#' in line:
@@ -34,72 +32,71 @@ def parse_matrix(args: argparse.Namespace): # typehint?
             
 @dataclass
 class Node:
-    score:  float
-    trace:  str
-    row:    int
-    column: int
+    score:           float
+    previous_row:    int
+    previous_column: int
+    row:             int
+    column:          int
 
-def initialize_grid(down, right):
+    def direction(self):
+        if self.previous_row < self.row and self.previous_column < self.column:
+            return 'D'
+        if self.previous_row < self.row:
+            return 'S'
+        if self.previous_column < self.column:
+            return 'E'
+        
+Grid = list[list[Node]]
+def initialize_grid(down: Edges, right: Edges) -> Grid:
     memo   = []
     n      = len(right)
     m      = len(down[0])
     for i in range(n):
         row = []
         for j in range(m):
-            row.append(Node(0, '-', i, j))
+            row.append(Node(0, -1, -1, i, j))
         memo.append(row)
     return memo
 
-def find_path(memo, down, right, diagonal, args):
+def find_path(memo: Grid, start_node: Node, down: Edges, right: Edges, diagonal: Edges, args: argparse.Namespace):
     n      = len(right)
     m      = len(down[0])
-    queue = [memo[0][0]]
+    queue  = [start_node]
     while len(queue) > 0:
         current = queue.pop(0)
-        if current.column + 1 < m:
-            right_node = memo[current.row][current.column + 1]
-            new_score = right[current.row][current.column] + current.score
-            if new_score > right_node.score:
-                right_node.score = new_score
-                right_node.trace = 'E' 
-                queue.append(right_node)
-        if current.row + 1 < n:
-            down_node = memo[current.row + 1][current.column]
-            new_score = down[current.row][current.column] + current.score
-            if new_score > down_node.score:
-                down_node.score = new_score
-                down_node.trace = 'S'
-                queue.append(down_node)
-        if args.diagonal:
-            if current.row + 1 < n and current.column + 1 < m:
-                diagonal_node = memo[current.row + 1][current.column + 1]
-                new_score = diagonal[current.row][current.column] + current.score
-                if new_score > diagonal_node.score:
-                    diagonal_node.score = new_score
-                    diagonal_node.trace = 'D'
-                    queue.append(diagonal_node)
-    end_node = memo [-1][-1]
-    return end_node
+        for edges in [right, down, diagonal]:
+            new_score = 0
+            next_node = None
+            if edges is right and current.column + 1 < m:
+                next_node = memo[current.row][current.column + 1]
+            if edges is down and current.row + 1 < n:
+                next_node = memo[current.row + 1][current.column]
+            if edges is diagonal and args.diagonal and current.row + 1 < n and current.column + 1 < m:
+                next_node = memo[current.row + 1][current.column + 1]
+            if next_node is not None:
+                new_score = edges[current.row][current.column] + current.score
+                if new_score > next_node.score:
+                    next_node.score = new_score
+                    next_node.previous_row = current.row
+                    next_node.previous_column = current.column
+                    queue.append(next_node)
 
-def traceback(end_node, memo, args):
+def traceback(end_node: Node, memo: Grid, args: argparse.Namespace) -> list[Node]:
     if args.trace:
         path = [end_node]
-        while end_node.trace != '-':
-            if end_node.trace == 'S':
-                previous_node = memo[end_node.row - 1][end_node.column]
-            if end_node.trace == 'E':
-                previous_node = memo[end_node.row][end_node.column - 1]
-            if end_node.trace == 'D':
-                previous_node = memo[end_node.row - 1][end_node.column - 1]
+        while end_node.previous_row >= 0 and end_node.previous_column >= 0:
+            previous_node = memo[end_node.previous_row][end_node.previous_column]
             path.append(previous_node)
             end_node = previous_node
     return path
 
 def main():
-    args   = parse_args()
+    args = parse_args()
     down, right, diagonal = parse_matrix(args)
     memo = initialize_grid(down, right)
-    end_node = find_path(memo, down, right, diagonal, args)
+    start_node = memo [0][0]
+    end_node = memo [-1][-1]
+    find_path(memo, start_node, down, right, diagonal, args)
     
     if int(end_node.score) == float(end_node.score):
         print(int(end_node.score))
@@ -109,9 +106,10 @@ def main():
     if args.trace:
         path = traceback(end_node, memo, args)
         path.reverse()
-        path_str = ''.join(map(lambda x: x.trace, path[1:]))
+        path_str = ''.join(map(Node.direction, path[1:]))
         print(path_str)
    
 
 if __name__ == '__main__':
     main()
+    
