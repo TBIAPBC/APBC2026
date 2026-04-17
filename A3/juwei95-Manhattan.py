@@ -47,11 +47,7 @@ class Node:
     row:    int
     column: int
 
-def main():
-    args   = parse_args()
-    down, right, diagonal = parse_matrix(args)
-
-
+def initialize_grid(down, right):
     memo   = []
     n      = len(right)
     m      = len(down[0])
@@ -60,8 +56,11 @@ def main():
         for j in range(m):
             row.append(Node(0, '-', i, j))
         memo.append(row)
+    return memo
 
-
+def find_path(memo, down, right, diagonal):
+    n      = len(right)
+    m      = len(down[0])
     queue = [memo[0][0]]
     while len(queue) > 0:
         current = queue.pop(0)
@@ -79,13 +78,20 @@ def main():
             if new_score > right_node.score:
                 right_node.score = new_score
                 queue.append(right_node)
+    end_node = memo [-1] [-1]
+    return end_node
+
+def main():
+    args   = parse_args()
+    down, right, diagonal = parse_matrix(args)
+    memo = initialize_grid(down, right)
+    end_node = find_path(memo, down, right, diagonal)
+
     # for i in memo:
     #     for j in i:
     #         print(j.score, end=' ')
     #         # print("%4.2f" % j.score, end=' ')
     #     print()
-
-    end_node = memo [-1] [-1]
 
     if int(end_node.score) == float(end_node.score):
         print(int(end_node.score))
