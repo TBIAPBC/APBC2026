@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 passed=0
 total=0
@@ -10,12 +10,20 @@ run_test() {
 
     ((total++))
 
+    start=$(date +%s%N)
+
     diff_output=$("$@" | diff - "$expected")
-    if [ $? -eq 0 ]; then
-        echo "✅ $name"
+    status=$?
+
+    end=$(date +%s%N)
+    runtime_ns=$((end - start))
+    runtime_ms=$((runtime_ns / 1000000))
+
+    if [ $status -eq 0 ]; then
+        echo "✅ $name (${runtime_ms} ms)"
         ((passed++))
     else
-        echo "❌ $name"
+        echo "❌ $name (${runtime_ms} ms)"
         echo "$diff_output"
     fi
 }
