@@ -28,6 +28,9 @@ def parse_matrix(args: argparse.Namespace) -> tuple[Edges, Edges, Edges]:
                 right.append(weights)
             else:
                 diagonal.append(weights)
+    if args.diagonal and not diagonal:
+        print('Error: -d specified but no diagonal edges found in input.')
+        exit(-1)
     return down, right, diagonal
             
 @dataclass
