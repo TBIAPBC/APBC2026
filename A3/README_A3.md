@@ -47,7 +47,7 @@ For an *m × n* grid:
 - **Dynamic Programming Approach**: 
   The `calculate_score_matrix` function builds up the solution efficiently using previously computed sub-solutions.
 - **Path Reconstruction**: 
-  The `print_path` function reconstructs and prints the actual path taken to achieve the maximum score.
+  The `print_path` function reconstructs and prints the actual path taken to achieve the maximum score. The optimal path always prioritises moves in the following order: 'S', then 'D', then 'E'
 - **Input Validation**:
   The code checks input consistency (number of weights) and reports problems with colored output for clarity. I'm unsure if the color works on OSs other than Windows.
 - **Customization**:
