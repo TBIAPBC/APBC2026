@@ -13,12 +13,14 @@ This project is an implementation of the Manhattan Tourist Problem, which asks f
 
 ## Input Format
 
-The code expects an input file with the following format (adapt as needed):
+The code expects an input file with the following format:
 
-- The first lines contain the edge weights for all "down" (vertical) movements, followed by the lines for all "right" (horizontal) movements.
-- If diagonal moves are enabled, additional lines specify diagonal edge weights.
-- Ensure the matrix dimensions in your input match those expected in the code.
-- All comments are ignored
+For an *m × n* grid:
+- The first *m - 1* lines must contain *n* edge weights for all "down" (vertical) scores
+- Followed by *m* lines containing *n - 1* "right" (horizontal) scores
+- If diagonal moves are enabled, *m - 1* additional lines specifying *n - 1* diagonal scores are required
+
+- All comments, empty lines, and invalid numbers are ignored
 
 ## Running the Code
 
@@ -27,7 +29,9 @@ The code expects an input file with the following format (adapt as needed):
 
 2. **Run the script**:
 
+    ```bash
     python eweindorfer-Manhattan.py <input-file> [-d] [-t] [-debug]
+    ```
     - `<input-file>`: Path to the input file containing edge weights in the required format.
     - `-d`: Enable support for diagonal moves (i.e., allow path to follow South-East diagonals if the diagonal matrix is supplied in the input).
     - `-t`: Additionally prints the optimal path.
@@ -36,7 +40,7 @@ The code expects an input file with the following format (adapt as needed):
 
 3. **Output**:
     - The script prints the edge weights loaded from your file.
-    - If -t is enabled, the optimal path (as a string of directions 'S', 'E', and optionally 'D') is printed.
+    - If `-t` is enabled, the optimal path (as a string of directions 'S', 'E', and optionally 'D') is printed.
 
 ## Code Features
 
@@ -63,7 +67,6 @@ Suppose you have a grid with 3 rows and 4 columns. Your input file (`input.in`) 
 ```
 1 0 2 4
 4 6 5 2
-7 4 3 7
 
 3 2 4
 9 7 3
