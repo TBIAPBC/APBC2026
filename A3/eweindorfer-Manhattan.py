@@ -3,9 +3,6 @@ import os
 os.system('')
 
 def main():
-    #TODO: add option to ignore diagonal values even when they are given
-    #TODO: add simple test file to check direction prio
-    #TODO: add readme
     parser = argparse.ArgumentParser(description="Solve Manhattan Tourist Problem")
     parser.add_argument('filename', type=str, help='Input filename')
     parser.add_argument('-t', action='store_true', help='Show optimal path')
