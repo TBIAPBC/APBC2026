@@ -1,0 +1,7 @@
+.venv
+.un*
+.swp*
+Scripts
+Lib
+include
+.cfg
