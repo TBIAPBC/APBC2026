@@ -7,6 +7,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('filename')
     parser.add_argument('-t', '--trace',    action='store_true', help='print the best path')
     parser.add_argument('-d', '--diagonal', action='store_true', help='allow diagonal edge weights')
+    parser.add_argument('-b', '--bellman',  action='store_true', help='use Bellman-Ford instead of DP')
     return parser.parse_args()
 
 Edges = list[list[float]]
@@ -61,28 +62,57 @@ def initialize_grid(down: Edges, right: Edges) -> Grid:
         memo.append(row)
     return memo
 
-def find_path(memo: Grid, start_node: Node, down: Edges, right: Edges, diagonal: Edges, args: argparse.Namespace):
-    n      = len(right)
-    m      = len(down[0])
+def calc_score(current: Node, memo: Grid, down: Edges, right: Edges, diagonal: Edges, args: argparse.Namespace):
+    n       = len(right)
+    m       = len(down[0])
+    next_nodes = []
+    for edges in (right, down, diagonal):
+        new_score = 0
+        next_node = None
+        if edges is right and current.column + 1 < m:
+            next_node = memo[current.row][current.column + 1]
+        if edges is down and current.row + 1 < n:
+            next_node = memo[current.row + 1][current.column]
+        if edges is diagonal and args.diagonal and current.row + 1 < n and current.column + 1 < m:
+            next_node = memo[current.row + 1][current.column + 1]
+        if next_node is not None:
+            new_score = edges[current.row][current.column] + current.score
+            if new_score > next_node.score:
+                next_node.score = new_score
+                next_node.previous_row = current.row
+                next_node.previous_column = current.column
+                next_nodes.append(next_node)
+    return next_nodes
+
+def dp(memo: Grid, down: Edges, right: Edges, diagonal: Edges, args: argparse.Namespace):
+    column = 0
+    while column < len(memo[0]):
+        row = 0
+        new_column = column
+        while row < len(memo) and new_column >= 0:
+            current = memo[row][new_column]
+            calc_score(current, memo, down, right, diagonal, args)
+            new_column -= 1
+            row += 1
+        column += 1
+
+    row = 1
+    while row < len(memo):
+        column = len(memo[0]) - 1
+        new_row = row
+        while column < len(memo[0]) and new_row < len(memo):
+            current = memo[new_row][column]
+            calc_score(current, memo, down, right, diagonal, args)
+            new_row += 1
+            column -= 1
+        row += 1
+
+def bellman_ford(memo: Grid, start_node: Node, down: Edges, right: Edges, diagonal: Edges, args: argparse.Namespace):
     queue  = [start_node]
     while len(queue) > 0:
         current = queue.pop(0)
-        for edges in [right, down, diagonal]:
-            new_score = 0
-            next_node = None
-            if edges is right and current.column + 1 < m:
-                next_node = memo[current.row][current.column + 1]
-            if edges is down and current.row + 1 < n:
-                next_node = memo[current.row + 1][current.column]
-            if edges is diagonal and args.diagonal and current.row + 1 < n and current.column + 1 < m:
-                next_node = memo[current.row + 1][current.column + 1]
-            if next_node is not None:
-                new_score = edges[current.row][current.column] + current.score
-                if new_score > next_node.score:
-                    next_node.score = new_score
-                    next_node.previous_row = current.row
-                    next_node.previous_column = current.column
-                    queue.append(next_node)
+        next_nodes = calc_score(current, memo, down, right, diagonal, args)
+        queue.extend(next_nodes)
 
 def traceback(end_node: Node, memo: Grid, args: argparse.Namespace) -> list[Node]:
     if args.trace:
@@ -99,8 +129,12 @@ def main():
     memo = initialize_grid(down, right)
     start_node = memo [0][0]
     end_node = memo [-1][-1]
-    find_path(memo, start_node, down, right, diagonal, args)
     
+    if args.bellman:
+        bellman_ford(memo, start_node, down, right, diagonal, args)
+    else:
+        dp(memo, down, right, diagonal, args)
+
     if int(end_node.score) == float(end_node.score):
         print(int(end_node.score))
     else:
