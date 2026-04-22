@@ -18,7 +18,7 @@ python annadhm_manhattan.py [-t] [-d] Manhattan-test*.in
 
 | Flag | Description |
 |------|-------------|
-| `<Manhattan-test*.in>` | input file (required) |
+| `Manhattan-test*.in` | input file (required) |
 | `-d` | Enable diagonal moves (HVD mode) |
 | `-t` | Enable traceback — prints score and path |
 
