@@ -72,6 +72,6 @@ Three blocks seperated by lines starting with `#---``
 - diagonal matrix with size
 
 # Error Handling
-- Wrong matrix dimensions are catch by an error message
+- Wrong matrix dimensions are catched by an error message
 - Non-parsable inputs throw a ValueError
 
