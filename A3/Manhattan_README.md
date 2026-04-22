@@ -26,7 +26,7 @@ python annadhm_manhattan.py [-t] [-d] Manhattan-test*.in
     If the `-t` flag is enabled, the path is printed, otherwise only the score is printed to the screen.
 
 ### Examples
-Example ouputs with the provided tests also uploaded to GitHub: annadhm-test*.out
+Example ouputs from the provided tests also uploaded to GitHub: annadhm-test*.out
 
 ```
     # HV mode, score only
