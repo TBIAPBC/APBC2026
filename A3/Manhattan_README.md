@@ -32,15 +32,9 @@ Example ouputs from the provided tests are also uploaded to GitHub: annadhm-test
     # HV mode, score only
     python annadhm_manhattan.py Manhattan-testHV*.in
 
-    *Example Output:
+    Example Output:
     for the input: 
     '''
-        ############################################################
-        # Test input 1 for the Manhattan tourist problem
-        #
-        # small example instance
-        #
-
         # size (north-south dimension times west-east dimension)
         # 3 3
         # north-south streets
@@ -62,7 +56,7 @@ Example ouputs from the provided tests are also uploaded to GitHub: annadhm-test
     # HV mode with traceback
     python annadhm_manhattan.py -t Manhattan-testHV*.in
 
-    *Example Output:
+    Example Output:
     for the same input used above, the following output is expected:
     '''
         18
