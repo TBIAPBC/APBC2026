@@ -56,7 +56,7 @@ def parse_input(f_name, use_diag= False):
             f"✋ Wait a minute... South matrix has {len(down)} rows, expected {len(right) - 1}"
         )
         assert len(down[0]) == len(right[0]) +1, (
-            f"✋ Hold on ... South matrix has {len(down[0])} collumns, expected {len(right[0] +1)}"     
+            f"✋ Hold on ... South matrix has {len(down[0])} collumns, expected {len(right[0]) +1}"     
         )
         if diagonal is not None:
             assert len(diagonal) == len(down), (
@@ -74,6 +74,7 @@ def parse_input(f_name, use_diag= False):
         cleaned = line.split("#")[0].strip()
         if cleaned:
             lines.append(cleaned)
+
         
     rows = [list(map(float, line.split())) for line in lines]
     
@@ -89,7 +90,7 @@ def parse_input(f_name, use_diag= False):
                     f"✋ Wait a minute... South matrix has {len(down)} rows, expected {len(right) - 1}"
                 )
                 assert len(down[0]) == len(right[0]) +1, (
-                    f"✋ Hold on ... South matrix has {len(down[0])} collumns, expected {len(right[0] +1)}"     
+                    f"✋ Hold on ... South matrix has {len(down[0])} collumns, expected {len(right[0]) +1}"     
                 )
                 return down, right, None
     
@@ -162,6 +163,8 @@ def main():
     args = parser.parse_args()
 
     down, right, diagonal = parse_input(args.file, args.d)
+    if args.d and diagonal is None:
+        print("⚠️ Warning: I am missing diagonal weights - Falling back to HV default mode")
 
     if args.t:
         weight, path = manhatten_problem(down, right, diagonal, True)
