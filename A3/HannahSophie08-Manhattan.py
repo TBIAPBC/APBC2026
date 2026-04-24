@@ -69,7 +69,18 @@ def read_file(filename):
       
     
     raise ValueError("Unrecognised input format!") # unknown input format
-    
+
+
+def validate_matrix(matrix, name):
+
+    if not matrix:
+        return
+    expected_len = len(matrix[0])
+    for idx, row in enumerate(matrix):
+        if len(row) != expected_len:
+            raise ValueError ("Matrix dimenstions are not consistent!")
+
+
 """
 HV: horizontal and vertical moves only, no diagonal moves.
 Uses dynamic programming to find best path from the top-left to 
@@ -248,6 +259,10 @@ def main():
     if not streets_we:
         print("Error: no west-east street data!", file=sys.stderr)
         sys.exit(1)
+    
+    validate_matrix(streets_ns, "NS")
+    validate_matrix(streets_we, "WE")
+    validate_matrix(streets_diag, "DIAG")
  
     if diagonal:
         if not streets_diag:
