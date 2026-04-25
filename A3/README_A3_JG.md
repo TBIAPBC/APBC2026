@@ -18,6 +18,7 @@ python julia-gro_manhattan.py [options] <input_file>
 |------|-------------|
 | `-t` | Print the best path in addition to the score (e.g. `ESES`) |
 | `-d` | Process input files that also contain diagonal edge weights (HVD mode) |
+| `-m` | Prints the filled DP matrix |
 
 Flags and filename can be given in any order.
 

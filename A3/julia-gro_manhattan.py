@@ -4,12 +4,13 @@ def get_file():
     args = sys.argv[1:]  
     trace = '-t' in args
     diagonal = '-d' in args
+    matrix = '-m' in args
     filename = [a for a in args if not a.startswith('-')][-1]
 
     with open(filename, "r") as f:
         text = f.read()
         
-    return text, trace, diagonal
+    return text, trace, diagonal, matrix
 
 
 
@@ -84,14 +85,16 @@ def traceback(dp, south, east, diag, N, M, diagonal):
             else:
                 moves.append("E")
                 j -= 1
-
     return ''.join(reversed(moves)) 
 
+def print_dp(dp):
+    for row in dp:
+        print("  ".join(f"{v:7.2f}" for v in row))
     
 
 def main():
 
-    text, trace, diagonal = get_file()
+    text, trace, diagonal, matrix = get_file()
     south, east, diag, N, M = get_data(text, diagonal)
     dp = solve(south, east, diag, N, M, diagonal)
 
@@ -105,6 +108,10 @@ def main():
         path = traceback(dp, south, east, diag, N, M, diagonal)
         print(path)
 
+    if matrix:
+        print_dp(dp)
+
+    
 
 if __name__ == "__main__":
     main()
