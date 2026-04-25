@@ -19,6 +19,8 @@ python julia-gro_manhattan.py [options] <input_file>
 | `-t` | Print the best path in addition to the score (e.g. `ESES`) |
 | `-d` | Process input files that also contain diagonal edge weights (HVD mode) |
 
+Flags and filename can be given in any order.
+
 ### Examples
 
 ```
@@ -64,7 +66,7 @@ Same as HV, with an additional third block:
 ## Output
 
 The program prints the maximum path weight to STDOUT. If `-t` is given, it also prints the path as a sequence of moves:
-- `E` — move easts
+- `E` — move east
 - `S` — move south
 - `D` — move diagonally (only in HVD mode)
 

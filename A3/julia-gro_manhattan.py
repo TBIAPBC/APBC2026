@@ -4,7 +4,7 @@ def get_file():
     args = sys.argv[1:]  
     trace = '-t' in args
     diagonal = '-d' in args
-    filename = args[-1]
+    filename = [a for a in args if not a.startswith('-')][-1]
 
     with open(filename, "r") as f:
         text = f.read()
@@ -75,12 +75,11 @@ def traceback(dp, south, east, diag, N, M, diagonal):
         else: 
             from_north = dp[i-1][j] + south[i-1][j]
             from_west = dp[i][j-1] + east[i][j-1]
-            if diagonal and dp[i][j] == dp[i-1][j-1] + diag[i-1][j-1]:
-                moves.append("D")
-                i -= 1
-                j -= 1
-            elif dp[i][j] == from_north:
+            if dp[i][j] == from_north:
                 moves.append("S")
+                i -= 1
+            elif diagonal and dp[i][j] == dp[i-1][j-1] + diag[i-1][j-1]:
+                moves.append("D")
                 i -= 1
             else:
                 moves.append("E")
