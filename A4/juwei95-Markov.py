@@ -44,24 +44,28 @@ def build_continuation_map(tokens: list[str], args: argparse.Namespace) -> dict[
 def print_output_token(token: str, args: argparse.Namespace):
     print(token, end=" " if args.words else "")
 
-def generate_text(continuation_map: dict[tuple[str], list[str]], tokens: list[str], args: argparse.Namespace) -> str:
+def generate_text(continuation_map: dict[tuple[str], list[str]], tokens: list[str], args: argparse.Namespace):
     random.seed(args.seed)
     context = tokens[:args.order]
     for token in tokens[:args.order]:
-        print_output_token(token, args)
+        yield token
     while tuple(context) in continuation_map:
         continuations = continuation_map[tuple(context)]
         next_token = continuations[random.randrange(len(continuations))]
         context.pop(0)
         context.append(next_token)
-        print_output_token(next_token, args)
-    print()
+        yield next_token
 
 def main():
     args = parse_args()
     tokens = parse_file(args)
     continuation_map = build_continuation_map(tokens, args)
-    generate_text(continuation_map, tokens, args)
+    try:
+        for token in generate_text(continuation_map, tokens, args):
+            print_output_token(token, args)
+    except KeyboardInterrupt:
+        pass
+    print()
 
 if __name__ == "__main__":
     main()
