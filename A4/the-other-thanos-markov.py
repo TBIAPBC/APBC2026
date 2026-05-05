@@ -31,7 +31,7 @@ def find_cont(text_str, k, w):
     Returns:
         tuple: A tuple containing:
             - cont_dict (dict): Maps context tuples to lists of possible next tokens.
-            - tokens (list): The tokenized input (list of words or characters).
+            - tokens (list/str): The tokenized input (list of words or string for characters).
     """
     
     contexts = []
@@ -58,7 +58,7 @@ def find_cont(text_str, k, w):
         
     return cont_dict, tokens
 
-def gen_text(cont_dict, text_str, k, w):
+def gen_text(cont_dict, tokens, k, w):
     """
     Generate new text using the Markov chain model.
     
@@ -68,16 +68,18 @@ def gen_text(cont_dict, text_str, k, w):
     
     Args:
         cont_dict (dict): The Markov chain model (context -> list of possible next tokens).
-        tokens (list): The original tokenized text (used for initialization).
+        tokens (list/str): The original tokenized text (used for initialization). 
+        If tokens are words it's a list if it's characters it's a string
         k (int): The order (context length).
-        w (bool): If True, join output with spaces; if False, concatenate.
+        w (bool): If True, join output with spaces; if False, concatenate. 
+        Concat for characters because the spaces are in the model and don't have to be added.
         
     Returns:
         str: The generated text.
     """
     
     gen_str = []
-    start = text_str[:k]
+    start = tokens[:k]
 
     for c in start:
         gen_str.append(c)
