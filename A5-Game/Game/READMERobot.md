@@ -12,4 +12,6 @@ when to move
 
 saving the visible path of the map
 
+avoiding crash 
+
 
