@@ -67,12 +67,12 @@ Using the same input, options, and seed (`-s`) will always produce the same outp
 |------|----------|--------|
 | Same input + same seed, run twice | Identical output | ✓ |
 | `-o` larger than text length | Output is just the initial context | ✓ |
-| `-w -o 1` on a long text | Hits 5000 word limit | ✓ |
+| `-w -o 1` on a long text | Hits 2000 word limit | ✓ |
 | No seed, run twice | Different outputs | ✓ |
 | `"aaaa"` with `-o 1` | Long string of `a` until limit | ✓ |
 
 **Issues encountered:**
 
-- **Infinite loops at low orders:** Order 1 and 2 create cycles in short texts. Fixed by capping generation at 5000 units.
+- **Infinite loops at low orders:** Order 1 and 2 create cycles in short texts. Fixed by capping generation at 2000 units.
 - **German special characters (ä, ö, ü, ß):** Windows defaulted to a non-UTF-8 encoding. Fixed by opening files with `encoding="utf-8"`.
 - **Trailing newline in character mode:** When piping input, the trailing `\n` was included as a character and could terminate generation early. Fixed by stripping trailing newlines with `rstrip`.
