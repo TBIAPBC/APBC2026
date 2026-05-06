@@ -1,5 +1,7 @@
 # Robot implementation
 
+reading in the rounds, gold position, etc.
+
 movement direction
 
 when to move
