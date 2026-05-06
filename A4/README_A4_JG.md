@@ -1,5 +1,5 @@
 ### Note
-This README-file has been written using Claude Code, as I was really happy with it, when using it for Assignment 3. I made minor changes but kept most of the suggestions.
+This README-file has been written using Claude Code, as I was really happy with it, when i used it for Assignment 3. I made minor changes but kept most of the suggestions.
 
 
 # Markov Text Generator
