@@ -1,8 +1,12 @@
 # Robot implementation
 
+variable with name
+
 reading in the rounds, gold position, etc.
 
-movement direction
+movement directions that are possible
+
+path to gold calculation
 
 when to move
 
