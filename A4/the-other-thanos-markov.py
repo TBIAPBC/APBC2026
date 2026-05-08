@@ -1,5 +1,6 @@
 import random
 import argparse
+import sys
 
 def read_input(filename):
     """
@@ -34,7 +35,7 @@ def find_cont(text_str, k, w):
             - tokens (list/str): The tokenized input (list of words or string for characters).
     """
     
-    contexts = []
+    #contexts = [] was used just for debugging to have a printout of my contexts.
     cont_dict= {}
 
     if w:
@@ -49,7 +50,7 @@ def find_cont(text_str, k, w):
             cont_dict[context].append(tokens[t+k])
         else:
             cont_dict[context] = [tokens[t+k]]
-        contexts.append(context)
+        #contexts.append(context)
     
     end_state_w = cont_dict.get(tuple(tokens[-k:]))
     
@@ -109,24 +110,28 @@ def gen_text(cont_dict, tokens, k, w):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(prog = "Markov Text Generator by Thanos", description = 'Takes a text file as input and generates text based on a markov model made from the input file')
-    parser.add_argument('filename',  help ='Path to the input text file.')
+    parser.add_argument('filename', nargs='?',  help ='Path to the input text file.')
     parser.add_argument('-w', '--words', action = 'store_true', help = 'Use word mode (default: character mode). In word mode, predictions are based on preceding words.')
     parser.add_argument('-o', '--order', type = int , help = 'Context length for predictions. Default is 1. (e.g., -o 2 uses 2 preceding tokens)', default = 1)
     parser.add_argument('-s', '--seed', type = int , help = 'Set a random seed for reproducible output. (e.g., -s 42).')
     
     args = parser.parse_args()
-    
-    filename = args.filename
     k = args.order
     w = args.words
     
+    if args.filename:
+        filename = args.filename
+        read_text = read_input(filename)
+        create_model = find_cont(read_text, k, w)  
+        text = (gen_text(create_model[0], create_model[1], k, w))
+    else:
+        input = sys.stdin.read()
+        create_model = find_cont(input, k, w) 
+        text = (gen_text(create_model[0], create_model[1], k, w))
+        
     if args.seed:
         random.seed(args.seed)
     
-
-    read_text = read_input(filename)
-    create_model = find_cont(read_text, k, w)  
-    text = (gen_text(create_model[0], create_model[1], k, w))
     print(text)
 
      
