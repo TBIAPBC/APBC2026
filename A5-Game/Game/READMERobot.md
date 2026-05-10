@@ -2,7 +2,6 @@
 
 variable with name
 
-reading in the rounds, gold position, etc.
 
 movement directions that are possible
 
@@ -12,6 +11,6 @@ when to move
 
 saving the visible path of the map
 
-avoiding crash 
+avoiding crash is still missing!
 
 
