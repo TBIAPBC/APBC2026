@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import random # brauchen wir ja eigentlich nicht mehr oder? (FIX!)
+import random # brauchen wir ja eigentlich nicht mehr oder? FIX!
 from collections import deque
 
 from game_utils import nameFromPlayerId
