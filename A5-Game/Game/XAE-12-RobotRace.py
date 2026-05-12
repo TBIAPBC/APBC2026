@@ -7,7 +7,7 @@ from player_base import Player
 # Our simple baseline bot. remembers discovered walls and greedily moves one step toward the gold
 class BaselineBot(Player):
     def reset(self, player_id, max_players, width, height):
-        self.player_name = "XAE-12 Baseline"
+        self.player_name = "Team_2_XAE-12"
         self.ourMap = Map(width, height)
         # Called once at the beginning of a game.
         # Store the bot name and create an internal map to remember discovered fields.

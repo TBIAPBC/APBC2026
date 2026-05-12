@@ -89,7 +89,7 @@ class MyRandomPlayer(Player):
 
 class MyNonRandomPlayer(Player):
 	def reset(self, player_id, max_players, width, height):
-		self.player_name = "NonRandom" # nameFromPlayerId(player_id)
+		self.player_name = "Test-Simly_Greedy" # nameFromPlayerId(player_id)
 		self.ourMap = Map(width, height)
 
 	def round_begin(self, r):

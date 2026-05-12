@@ -13,7 +13,7 @@ class MyPathFindingPlayer(Player):
                 self.random=random
 
         def reset(self, player_id, max_players, width, height):
-                self.player_name = "SillyScout"
+                self.player_name = "Test_PathFindingPlayer"
                 self.ourMap = Map(width, height)
 
         def round_begin(self, r):

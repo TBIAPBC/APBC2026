@@ -13,7 +13,7 @@ from player_base import Player
 class MyPlayer(Player):
  
 	def reset(self, player_id, max_players, width, height):
-		self.player_name = "Bot4"
+		self.player_name = "Team_4_forsurewinners"
 		self.player_id = player_id
 		self.width = width
 		self.height = height

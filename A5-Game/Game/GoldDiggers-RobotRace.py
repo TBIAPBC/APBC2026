@@ -11,7 +11,7 @@ class BasicBot(Player):
                 self.random=random
 
         def reset(self, player_id, max_players, width, height):
-                self.player_name = "GoldDigger-Bot-Basic"
+                self.player_name = "Team_1_GoldDigger"
                 self.ourMap = Map(width, height)
 
         def round_begin(self, r):

@@ -66,6 +66,8 @@ class Illustrator:
     def _illustrate(self):
         fig, self.ax = plt.subplots(
             nrows=1, ncols=1, figsize=(8, 8))
+        fig.subplots_adjust(top=0.9)
+
 
         self.init_plot()
         self.init_walls()
@@ -100,8 +102,13 @@ class Illustrator:
             self.ax.plot([], [], alpha=0.5, linewidth=self.linewidth,zorder=1, label=self.robot_names[i])[0]
             for i in range(self.n_robots)
         ]
-        self.ax.legend(loc='upper right', bbox_to_anchor=(
-            0.05, 1.15), prop=dict(size=8))
+        self.ax.legend(
+            loc='upper center',
+            bbox_to_anchor=(0.5, 1.10),
+            ncol=max(1, min(3, self.n_robots)),
+            prop=dict(size=8),
+            frameon=True,
+        )
 
     def init_robots(self):
         self.robot = self.ax.scatter(
@@ -124,7 +131,7 @@ class Illustrator:
 
         # figure
         title = str(i+1)
-        self.ax.set_title(title, fontsize=20)
+        self.ax.set_title(title, fontsize=20, loc='left')
 
         # goldpots
         self.goldpots.set_offsets(self.goldpos[i])
