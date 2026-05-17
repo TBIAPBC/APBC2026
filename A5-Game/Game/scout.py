@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import random # brauchen wir ja eigentlich nicht mehr oder? FIX!
+
 from collections import deque
 
 from game_utils import nameFromPlayerId
@@ -22,7 +22,14 @@ class MyPlayer(Player):
 		self.visit_count = {}
 		# remember last few positions so we dont go back and forth
 		self.recent_positions = deque(maxlen=12)
- 
+		# rember gold hisotry --> maxlen can potentially be changed later on but this is just what I thought makes sense for now 
+		self.gold_history = deque(maxlen=10) # deque https://www.geeksforgeeks.org/python/deque-in-python/
+		# what do we do if pot not in reach logic
+		self.last_pot_pos = None
+		# tracks opponents more closer so we dont just avoid all 8 tiles 
+		self.last_opponent_positions = {}
+
+
 	def round_begin(self, r):
 		pass
 
@@ -189,14 +196,175 @@ class MyPlayer(Player):
 				queue.append(((nx, ny), path + [direction]))
  
 		return []
+	
+	# Update: Implementation we talked about making bots risk behaviour depencdant on current health and gold
+	def max_sprint_length(self, status):
+		health_ratio = status.health / status.params.maxHealth
+		
+		if health_ratio > 0.9:
+			health_limit = 7 # sprint up to 7 steps when healthy
+		elif health_ratio > 0.6:
+			health_limit = 5
+		elif health_ratio > 0.3:
+			health_limit = 3
+		else:
+			health_limit = 1  # if its lower than 0.3 dont risk anything 
+
+
+		# keeping also gold reserves in mind and making it dependant on health status if we have low health we will use less steps anyways 
+		if health_limit >= 7:
+			buffer = 30 # if healthy we want to move more 
+		elif health_limit >= 5:
+			buffer = 15
+		elif health_limit >= 3:
+			buffer = 10
+		else:
+			buffer = 5
+
+		# finding the longest sprint we can take while still keeping health and gold reserves in a safe range
+		gold_limit = 0 
+		for steps in range(1, 8):
+			cost_steps = sum(range(1, steps + 1))
+			if cost_steps + buffer <= status.gold:
+				gold_limit = steps
+			else:
+				break
+		
+		return min(health_limit, gold_limit)
+	
+	# setting profit margign dynamically so it depends on how well we performed in previous rounds 
+	def profit_margin (self, status):
+		# needs some rounds to judge trend
+		if len(self.gold_history) < 4:
+			return 30
+
+		growth = self.gold_history[-1] - self.gold_history[0]
+
+		if growth > 20:
+			return 1
+		elif growth > 5:
+			return 10
+		elif growth > 0:
+			return 20 
+		else:
+			return 5 # be more aggresive if we have nothing to lose 
+
+	# crash avoidance based on health 
+	def crash_caution_level(self, status):
+	
+		health_ratio = status.health / status.params.maxHealth
+
+		if health_ratio > 0.7:
+			return 0   # plenty of HP, be aggressive and dont care much about crashing
+		else:
+			return 1   # vulnerable, give them space
+		
+	def predict_danger_tiles(self, status):
+			if self.crash_caution_level(status) == 0:
+				return set()
+			
+			danger = set()
+			current_positions = {}
+
+			#we can assume that the opponent heads towards gold or walks in the direction it's facing --> otherwise we are just too cautious 
+			gold_target = None
+			if status.goldPots:
+				gold_target = next(iter(status.goldPots))
+			
+			for x in range(self.width):
+				for y in range(self.height):
+					tile = self.known_map[x, y]
+					if tile.obj is None or not tile.obj.is_player():
+						continue
+					if tile.obj.is_player(self.player_id):
+						continue
+					
+					opp_id = tile.obj.as_player()
+					current_positions[opp_id] = (x, y)
+					
+					predicted = None
+					
+					# assumption 1 --> they step toward gold
+					if gold_target is not None:
+						gx, gy = gold_target
+						ndx = 0 if gx == x else (1 if gx > x else -1)
+						ndy = 0 if gy == y else (1 if gy > y else -1)
+						nx, ny = x + ndx, y + ndy
+						if 0 <= nx < self.width and 0 <= ny < self.height:
+							if not self.known_map[nx, ny].is_blocked():
+								predicted = (nx, ny)
+					
+					# assumption 2 --> same direction as last round
+					if predicted is None:
+						last_pos = self.last_opponent_positions.get(opp_id)
+						if last_pos is not None and last_pos != (x, y):
+							dx = x - last_pos[0]
+							dy = y - last_pos[1]
+							ndx = 0 if dx == 0 else (1 if dx > 0 else -1)
+							ndy = 0 if dy == 0 else (1 if dy > 0 else -1)
+							nx, ny = x + ndx, y + ndy
+							if 0 <= nx < self.width and 0 <= ny < self.height:
+								if not self.known_map[nx, ny].is_blocked():
+									predicted = (nx, ny)
+					
+					# Fixed: I now added what if we can't make a prediction --> we shouldnt freeze that costet us more than walking 
+					if predicted is not None:
+						danger.add(predicted)
+			
+			self.last_opponent_positions = current_positions
+			return danger
+	
+
+	def should_dodge(self, status):
+		# is anyone right next to us this round
+		me = (status.x, status.y)
+		for x in range(self.width):
+			for y in range(self.height):
+				tile = self.known_map[x, y]
+				if tile.obj is None or not tile.obj.is_player():
+					continue
+				if tile.obj.is_player(self.player_id):
+					continue
+				if max(abs(x - me[0]), abs(y - me[1])) == 1:
+					return True
+		return False
+	
+	# Bot performed poorly in dense maize maps so I thought maybe we should sprint less if we dont know path 
+	def path_fully_unknown(self, start, path):
+		x, y = start 
+		for d in path:
+			dx, dy = d.as_xy()
+			x, y = x + dx, y + dy
+			if self.known_map[x, y].status != TileStatus.Unknown:
+				return False
+		return True
  
 	def move(self, status):
+		self.gold_history.append(status.gold)
 		self.update_map(status)
 		start = (status.x, status.y)
  
 		self.visit_count[start] = min(self.visit_count.get(start, 0) + 1, 3) # Added panalty cap at 3
 		self.recent_positions.append(start)
 
+		# this is to figure out which tiles nearby oponents might step into so we dont crash
+		danger = self.predict_danger_tiles(status)
+
+		def safe_step(direction):
+			dx, dy = direction.as_xy()
+			return (start[0] + dx, start[1] + dy) not in danger
+		
+		# dodge if someone is right next to us and we have nothing better to do (e.g. no gold path)
+		if self.should_dodge(status) and not status.goldPots:
+			for d in D:
+				dx, dy = d.as_xy()
+				nx, ny = start[0] + dx, start[1] + dy
+				if (nx, ny) in danger:
+					continue
+				if not self.is_safe_tile(nx, ny):
+					continue
+				return [d]
+ 
  		# calls function so move can be made based on gold 
 		if status.goldPots:
 			gold, path = self.choose_best_gold_target(start, status)
@@ -213,24 +381,34 @@ class MyPlayer(Player):
 				# checks if pot will expire before we  get there 
 				if steps > status.goldPotRemainingRounds:
 					explore_path = self.find_nearest_unknown(start)
-					if explore_path:
+					if explore_path and safe_step(explore_path[0]):
 						return [explore_path[0]]
 					return self.choose_exploration_move(status)
  
-				# this will sprint to gold if its close at max 5 steps
-				if steps <= 5 and cost < status.gold and gold_amount - cost > 30:
+				# sprint if gold is worth it and the first step isnt risky
+				if (steps <= self.max_sprint_length(status) 
+					and gold_amount - cost > self.profit_margin(status)
+					and safe_step(path[0])
+					and self.path_fully_unknown(start, path)):	
 					if self.am_i_closest(status, gold, start):
 						return path
  
-				# default --> one step toward gold
-				return [path[0]]
+				# default --> one step toward gold (only if safe)
+				if safe_step(path[0]):
+					return [path[0]]
+				# otherwise let exploration handle it below
  
 		explore_path = self.find_nearest_unknown(start)
-		if explore_path:
+		if explore_path and safe_step(explore_path[0]):
 			return [explore_path[0]]
- 
+
+		# fall back to scored exploration, also only if its safe
+		explore = self.choose_exploration_move(status)
+		if explore and safe_step(explore[0]):
+			return explore
 		
-		return self.choose_exploration_move(status)
+		# nothing safe to do --> just wait this round
+		return []
  
  
 players = [MyPlayer()]
