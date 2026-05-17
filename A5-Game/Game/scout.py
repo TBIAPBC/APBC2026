@@ -70,7 +70,10 @@ class MyPlayer(Player):
  
 		return True
  
-	def breadth_first_search(self, start, goal, status):
+	def breadth_first_search(self, start, goal, status, danger=None):
+		if danger is None:
+			danger = set()
+		
 		if start == goal:
 			return []
  
@@ -87,6 +90,10 @@ class MyPlayer(Player):
  
 				if (nx, ny) in visited:
 					continue
+				if (nx, ny) in danger:
+					continue
+
+			
 				# allow unknowns when chasing gold so we dont get stuck waiting
 				if not self.is_safe_tile(nx, ny, allow_unknown=True):
 					continue
@@ -102,14 +109,14 @@ class MyPlayer(Player):
 		return []
  
 	# chooses based on path length and gold amount
-	def choose_best_gold_target(self, start, status):
+	def choose_best_gold_target(self, start, status, danger=None):
 		
 		best_gold = None
 		best_path = None
 		best_score = None
  
 		for gold_pos, amount in status.goldPots.items():
-			path = self.breadth_first_search(start, gold_pos, status)
+			path = self.breadth_first_search(start, gold_pos, status, danger) # added danger here so we can avoid tiles where opponents might step into
 			if not path and gold_pos != start:
 				continue
  
@@ -394,7 +401,7 @@ class MyPlayer(Player):
  
  		# calls function so move can be made based on gold 
 		if status.goldPots:
-			gold, path = self.choose_best_gold_target(start, status)
+			gold, path = self.choose_best_gold_target(start, status, danger) # also added danger 
  
 			if gold == start:
 				return []
