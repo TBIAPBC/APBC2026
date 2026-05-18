@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import numpy as np
-
 
 class Illustrator:
     def __init__(self, m, vizfile, framerate):
@@ -79,7 +79,7 @@ class Illustrator:
         gif = FuncAnimation(fig, self.illustrate_round,
                             self.n_rounds)
         gif.save(self.vizfile, 
-                 dpi=80, fps=self.FRAME_PER_SECOND)
+                 dpi=100, fps=self.FRAME_PER_SECOND) # higher dpi 
 
     def init_plot(self):
         self.ax.tick_params(
@@ -109,8 +109,27 @@ class Illustrator:
                             gap_x.append(gap[0])
                             gap_y.append(gap[1])
 
-        # add texture to the walls and change the wall color
-        self.ax.scatter(x=x_coords, y=y_coords, marker='s', c='#8888aa',s=self.markersize, edgecolors='#555577', linewidths=1.5)
+        # emojis as files found in illustrations folder (source and if we need to look up: https://www.geeksforgeeks.org/python/working-with-images-in-python-using-matplotlib/)
+        wall_img = plt.imread('illustrations/cactus.png')
+        # walling our walls
+        wall_set = set(self.walls)
+        # we need to know the ones without emojis/walls
+        floor_x, floor_y = [], []
+        for x in range(self.width):
+            for y in range(self.height):
+                if (x, y) not in wall_set:
+                    floor_x.append(x)
+                    floor_y.append(y)
+        # desert one in we put flags for themes we have to make it conditional (change colour and match it, we could also add colour to the other tiles depending on the theme)
+        self.ax.scatter(x=floor_x, y=floor_y, marker='s', c='#F9E6D2', s=self.markersize, linewidths=0.5, edgecolors='#BD8057') # colours from  https://htmlcolorcodes.com/color-wheel/
+        # scaling zoom to size
+        zoom = 1.5 / max(self.width, self.height)
+        # we have to draw it for each tile (check out https://matplotlib.org/stable/gallery/text_labels_and_annotations/demo_annotation_box.html)
+        for (x, y) in self.walls:
+            imagebox = OffsetImage(wall_img, zoom=0.035) # loading image
+            box = AnnotationBbox(imagebox, (x, y), frameon=False) # placing image as coordinate
+            self.ax.add_artist(box) # we need add_artist to add it to the plot
+
         # draw gap indicators at diagonal gaps 
         if gap_x:
             self.ax.scatter(x=gap_x, y=gap_y, marker='o', c='white', s=self.markersize * 0.15, zorder=3, alpha=0.6)
