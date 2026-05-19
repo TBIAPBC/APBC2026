@@ -15,7 +15,29 @@ class BasicBot(Player):
                 self.ourMap = Map(width, height)
 
         def round_begin(self, r):
-                pass
+                 #map memory
+                #store status of fields that you see from the current position
+                status = self.status
+                for dx in range(-status.params.visibility, status.params.visibility +1):
+                        for dy in range(-status.params.visibility, status.params.visibility +1):
+                                x = status.x + dx 
+                                y = status.y + dy
+
+                                #map boundary
+                                if not self.is_inside_map((x, y)):
+                                        continue
+
+                                if status.map[x,y].status != TileStatus.Unknown:
+                                        self.ourMap[x,y].status = status.map[x,y].status
+
+        def is_inside_map(self, position):
+                x, y = position
+                if x < 0 or y < 0:
+                                return False
+                elif x >= self.ourMap.width or y >= self.ourMap.height:
+                                return False
+                else:
+                        return True
 
         def _as_direction(self,curpos,nextpos):
                 for d in D:
@@ -81,7 +103,7 @@ class BasicBot(Player):
                 Input: current status and x, y coordinates of tile to check
                 Output: True -> obstacle on tile, False -> tile is clear, None if we cannot see the tile
                 '''
-                tileStatus = status.map[x, y].status
+                tileStatus = self.ourMap[x, y].status
                 if  tileStatus == TileStatus.Wall or tileStatus == TileStatus.Mine:
                         print("Found an obstacle")
                         return True
