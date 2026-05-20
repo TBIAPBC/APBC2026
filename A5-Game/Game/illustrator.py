@@ -3,8 +3,9 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import numpy as np
 
+
 class Illustrator:
-    def __init__(self, m, vizfile, framerate):
+    def __init__(self, m, vizfile, framerate, theme='default'):
         self.robotspos = []
         self.robotshealth = []
         self.robotsmoney = []
@@ -22,6 +23,44 @@ class Illustrator:
 
         self.FRAME_PER_SECOND = framerate
         self.vizfile = vizfile
+
+         # set theme, if no theme is given, use default
+        if theme in self.THEMES:
+            self.theme = self.THEMES[theme]
+        else:
+            print(f"Unknown theme '{theme}', using default.")
+            self.theme = self.THEMES['default']
+    
+    # themes defining the appearance of the wall tiles 
+    # wall_image: optional PNG that is added to each wall tile
+    # zoom: defines scale of PNG on wall tiles
+    # default: no wall_image 
+    THEMES = {
+        'default': {
+            'wall_color': None,
+            'wall_edge': None,
+            'wall_image': None,
+            'zoom': None,
+        },
+        'desert': {
+            'wall_color': '#F9E6D2',
+            'wall_edge': '#BD8057',
+            'wall_image': 'illustrations/cactus.png',
+            'zoom': 0.035,
+        },
+        'forest': {
+            'wall_color': '#c8e6c9',
+            'wall_edge': '#388e3c',
+            'wall_image': 'illustrations/evergreen_forest.png',
+            'zoom': '0.035'
+        },
+        'garden': {
+            'wall_color': '#f0f4c3',
+            'wall_edge': '#afb42b',
+            'wall_image': 'illustrations/flowers.png',
+            'zoom': '0.02'
+        },
+    }
 
     def find_walls(self, m):
         self.walls = [
@@ -71,6 +110,24 @@ class Illustrator:
 
         self.init_plot()
         self.init_walls()
+
+        # --- Draw walls only once and not at every frame to make the animation faster ---
+
+        fig.canvas.draw() # make sure walls are drawn
+        extent = self.ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+        # safe area inside the axis as png
+        plt.savefig('background.png', dpi=100, bbox_inches=extent)
+
+        self.ax.cla()
+        self.init_plot()  # restore axis limits
+        # paste backround image as background
+        bg_img = plt.imread('background.png')
+        self.ax.imshow(bg_img, extent=[-0.5, self.width-0.5, -0.5, self.height-0.5],
+                    origin='upper', zorder=0)
+        # explicitly restore limits in case imshow changed them
+        self.ax.set_ylim(top=self.height-0.5, bottom=-0.5)
+        self.ax.set_xlim(left=-0.5, right=self.width-0.5)
+
         self.init_robots()
         self.init_trails()
         self.init_goldpots()
@@ -109,30 +166,25 @@ class Illustrator:
                             gap_x.append(gap[0])
                             gap_y.append(gap[1])
 
-        # emojis as files found in illustrations folder (source and if we need to look up: https://www.geeksforgeeks.org/python/working-with-images-in-python-using-matplotlib/)
-        wall_img = plt.imread('illustrations/cactus.png')
-        # walling our walls
-        wall_set = set(self.walls)
-        # we need to know the ones without emojis/walls
-        floor_x, floor_y = [], []
-        for x in range(self.width):
-            for y in range(self.height):
-                if (x, y) not in wall_set:
-                    floor_x.append(x)
-                    floor_y.append(y)
-        # desert one in we put flags for themes we have to make it conditional (change colour and match it, we could also add colour to the other tiles depending on the theme)
-        self.ax.scatter(x=floor_x, y=floor_y, marker='s', c='#F9E6D2', s=self.markersize, linewidths=0.5, edgecolors='#BD8057') # colours from  https://htmlcolorcodes.com/color-wheel/
-        # scaling zoom to size
-        zoom = 1.5 / max(self.width, self.height)
-        # we have to draw it for each tile (check out https://matplotlib.org/stable/gallery/text_labels_and_annotations/demo_annotation_box.html)
-        for (x, y) in self.walls:
-            imagebox = OffsetImage(wall_img, zoom=0.035) # loading image
-            box = AnnotationBbox(imagebox, (x, y), frameon=False) # placing image as coordinate
-            self.ax.add_artist(box) # we need add_artist to add it to the plot
-
+        if self.theme['wall_image'] is not None: # if theme is not default
+            # emojis as files found in illustrations folder (source and if we need to look up: https://www.geeksforgeeks.org/python/working-with-images-in-python-using-matplotlib/)
+            wall_img = plt.imread(self.theme['wall_image'])
+            # walling our walls
+            self.ax.scatter(x=x_coords, y=y_coords, marker='s', c=self.theme['wall_color'], s=self.markersize, linewidths=0.5, edgecolors=self.theme['wall_edge'])
+            # we have to draw it for each tile (check out https://matplotlib.org/stable/gallery/text_labels_and_annotations/demo_annotation_box.html)
+            for (x, y) in self.walls:
+                imagebox = OffsetImage(wall_img, zoom=float(self.theme['zoom'])) # loading image
+                box = AnnotationBbox(imagebox, (x, y), frameon=False) # placing image as coordinate
+                self.ax.add_artist(box) # we need add_artist to add it to the plot
+            
+        else: # default theme 
+            self.ax.scatter(x=x_coords, y=y_coords, marker='s', c='#8888aa',
+                            s=self.markersize, edgecolors='#555577', linewidths=1.5)
+            
         # draw gap indicators at diagonal gaps 
         if gap_x:
             self.ax.scatter(x=gap_x, y=gap_y, marker='o', c='white', s=self.markersize * 0.15, zorder=3, alpha=0.6)
+
 
     # different colors for each robot
     COLORS = ['#00ffff', '#ff6b6b', '#6bff6b', '#ffaa00', '#aa6bff', '#ff69b4', '#ff4500']
