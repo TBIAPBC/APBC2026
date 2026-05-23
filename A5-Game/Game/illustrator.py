@@ -40,26 +40,41 @@ class Illustrator:
             'wall_color': None,
             'wall_edge': None,
             'wall_image': None,
-            'zoom': None,
+            'zoom': None
         },
         'desert': {
             'wall_color': '#F9E6D2',
             'wall_edge': '#BD8057',
             'wall_image': 'illustrations/cactus.png',
             'zoom': 0.035,
+            'mine_image': 'illustrations/expl.png',
+            'gold_image': 'illustrations/sand_gold.png'
         },
         'forest': {
             'wall_color': '#c8e6c9',
             'wall_edge': '#388e3c',
             'wall_image': 'illustrations/evergreen_forest.png',
-            'zoom': '0.035'
+            'zoom': '0.035',
+            'mine_image': 'illustrations/hole.png',
+            'gold_image': 'illustrations/grass_gold.png'
         },
         'garden': {
             'wall_color': '#f0f4c3',
             'wall_edge': '#afb42b',
             'wall_image': 'illustrations/flowers.png',
-            'zoom': '0.02'
+            'zoom': '0.02',
+            'mine_image': 'illustrations/hole.png',
+            'gold_image': 'illustrations/grass_gold.png'
         },
+        'island': {
+            'wall_color': '#F7E1CA',
+            'wall_edge': "#7f6a36",
+            'wall_image': 'illustrations/palm.png',
+            'zoom': '0.02',
+            'mine_image': 'illustrations/expl.png',
+            'gold_image': 'illustrations/sand_gold.png',
+            'floor_color': '#aee3f5'
+        }
     }
 
     def find_walls(self, m):
@@ -109,6 +124,8 @@ class Illustrator:
         fig.subplots_adjust(top=0.85)  
 
         self.init_plot()
+        if self.theme.get('floor_color') is not None:
+            self.ax.set_facecolor(self.theme['floor_color'])
         self.init_walls()
 
         # --- Draw walls only once and not at every frame to make the animation faster ---
@@ -217,13 +234,38 @@ class Illustrator:
             self.robot_markers.append(marker)
 
     def init_goldpots(self):
-        self.goldpots = self.ax.scatter(x=[], y=[], marker='*', edgecolors='k', c='gold')
-        # make the gold glow
-        self.goldglow = self.ax.scatter(x=[], y=[], marker='*', c='yellow', alpha=0.3, zorder=1)  
+        # glow circle behind the pot, this is what pulses (easier and more readable than pulsing image)
+        self.goldglow = self.ax.scatter(x=[], y=[], marker='o', c='gold', alpha=0.3, zorder=1)
+
+        if self.theme['gold_image'] is not None:   # themed: pot is an image
+            # we dont know the max pot count up front --> take account for that 
+            max_pots = max(len(pots) for pots in self.goldpos)
+            pot_img = plt.imread(self.theme['gold_image'])
+            self.gold_boxes = []
+            for _ in range(max_pots):
+                imagebox = OffsetImage(pot_img, zoom=0.02)
+                box = AnnotationBbox(imagebox, (0, 0), frameon=False, zorder=3)
+                box.set_visible(False)   # hidden until a pot needs it
+                self.ax.add_artist(box)
+                self.gold_boxes.append(box)
+        else:   # default: plain star, like before
+            self.gold_boxes = None
+            self.goldpots = self.ax.scatter(x=[], y=[], marker='*', edgecolors='k', c='gold')
+
 
     def init_mines(self):
-        self.mines = self.ax.scatter(
-            x=[], y=[], marker='X', edgecolors='k', c='red')
+        if self.theme['mine_image'] is not None:   # themed: mine is an image
+            mine_img = plt.imread(self.theme['mine_image'])
+            self.mine_boxes = []
+            for _ in range(5):
+                imagebox = OffsetImage(mine_img, zoom=0.04)
+                box = AnnotationBbox(imagebox, (0, 0), frameon=False, zorder=4)
+                box.set_visible(False)   # hidden until a mine needs it
+                self.ax.add_artist(box)
+                self.mine_boxes.append(box)
+        else:   # default: plain red X, like before
+            self.mine_boxes = None
+            self.mines = self.ax.scatter(x=[], y=[], marker='X', edgecolors='k', c='red')
 
     def illustrate_round(self, i):
         def pivot(array):
@@ -238,17 +280,27 @@ class Illustrator:
 
         # goldpots
         sizes = []
-        # make gold pulse, speed increases as the gold gets older 
+        # pulse drives the glow circle, faster + bigger the older the pot
         for amount in self.goldamount[i]:
-            # faster pulse the older/larger the pot
             pulse_speed = 0.5 + (amount / 200.0) * 0.5
             pulse = 1.0 + 0.4 * np.sin(i * pulse_speed)
             sizes.append(amount * pulse)
 
-        self.goldpots.set_offsets(self.goldpos[i] if self.goldpos[i] else np.empty((0, 2)))
-        self.goldpots.set_sizes(sizes if sizes else [])
+        # glow circle is the same in both themes
         self.goldglow.set_offsets(self.goldpos[i] if self.goldpos[i] else np.empty((0, 2)))
         self.goldglow.set_sizes([s * 3 for s in sizes] if sizes else [])
+
+        if self.gold_boxes is not None:   # themed: move pot images, hide extras
+            for j, box in enumerate(self.gold_boxes):
+                if j < len(self.goldpos[i]):
+                    box.xybox = self.goldpos[i][j]
+                    box.xy = self.goldpos[i][j]
+                    box.set_visible(True)
+                else:
+                    box.set_visible(False)
+        else:   # default: plain star scatter
+            self.goldpots.set_offsets(self.goldpos[i] if self.goldpos[i] else np.empty((0, 2)))
+            self.goldpots.set_sizes(sizes if sizes else [])
 
         # robots
         for j, (outline, marker) in enumerate(zip(self.robot_outlines, self.robot_markers)):
@@ -261,7 +313,17 @@ class Illustrator:
             marker.set_array(np.array([self.robotshealth[i][j]]))
             
         # mines
-        self.mines.set_offsets(self.minepos[i])
+        if self.mine_boxes is not None:   # themed: move mine images, hide the rest
+            mines_this_frame = self.minepos[i]
+            for box, pos in zip(self.mine_boxes, mines_this_frame):
+                if pos == (-1, -1):          # padding --> not a real mine, hide it
+                    box.set_visible(False)
+                else:
+                    box.xybox = pos          # move the image
+                    box.xy = pos
+                    box.set_visible(True)
+        else:   # default: plain red X scatter
+            self.mines.set_offsets(self.minepos[i])
 
         # trails
         lo = [0, i-5][i-5 >= 0]
