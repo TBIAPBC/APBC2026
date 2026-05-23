@@ -40,40 +40,46 @@ class Illustrator:
             'wall_color': None,
             'wall_edge': None,
             'wall_image': None,
-            'zoom': None
+            'zoom': None,
+            'mine_image': None,
+            'gold_image': None
         },
         'desert': {
-            'wall_color': '#F9E6D2',
-            'wall_edge': '#BD8057',
+            'wall_color': "#F9F2D2",
+            'wall_edge': "#BDA557",
             'wall_image': 'illustrations/cactus.png',
-            'zoom': 0.035,
+            'zoom': '0.024',
             'mine_image': 'illustrations/expl.png',
-            'gold_image': 'illustrations/sand_gold.png'
+            'gold_image': 'illustrations/sand_gold.png',
+            'floor_color': "#F9E6D2"
         },
         'forest': {
             'wall_color': '#c8e6c9',
             'wall_edge': '#388e3c',
             'wall_image': 'illustrations/evergreen_forest.png',
-            'zoom': '0.035',
+            'zoom': '0.024',
             'mine_image': 'illustrations/hole.png',
-            'gold_image': 'illustrations/grass_gold.png'
+            'gold_image': 'illustrations/grass_gold.png',
+            'floor_color': "#d8eed8"
         },
         'garden': {
             'wall_color': '#f0f4c3',
             'wall_edge': '#afb42b',
-            'wall_image': 'illustrations/flowers.png',
-            'zoom': '0.02',
+            'wall_image': 'illustrations/garden_wall.png',
+            'zoom': '0.012',
             'mine_image': 'illustrations/hole.png',
-            'gold_image': 'illustrations/grass_gold.png'
+            'gold_image': 'illustrations/grass_gold.png',
+            'floor_color': "#c0dabd"
+            
         },
         'island': {
-            'wall_color': '#F7E1CA',
-            'wall_edge': "#7f6a36",
+            'wall_color': "#F5DD90",
+            'wall_edge': "#6B3A13",
             'wall_image': 'illustrations/palm.png',
-            'zoom': '0.02',
+            'zoom': '0.024',
             'mine_image': 'illustrations/expl.png',
             'gold_image': 'illustrations/sand_gold.png',
-            'floor_color': '#aee3f5'
+            'floor_color': "#9ed0e1"
         }
     }
 
@@ -124,8 +130,6 @@ class Illustrator:
         fig.subplots_adjust(top=0.85)  
 
         self.init_plot()
-        if self.theme.get('floor_color') is not None:
-            self.ax.set_facecolor(self.theme['floor_color'])
         self.init_walls()
 
         # --- Draw walls only once and not at every frame to make the animation faster ---
@@ -153,7 +157,7 @@ class Illustrator:
         gif = FuncAnimation(fig, self.illustrate_round,
                             self.n_rounds)
         gif.save(self.vizfile, 
-                 dpi=100, fps=self.FRAME_PER_SECOND) # higher dpi 
+                 dpi=80, fps=self.FRAME_PER_SECOND) # higher dpi 
 
     def init_plot(self):
         self.ax.tick_params(
@@ -200,8 +204,19 @@ class Illustrator:
             
         # draw gap indicators at diagonal gaps 
         if gap_x:
-            self.ax.scatter(x=gap_x, y=gap_y, marker='o', c='white', s=self.markersize * 0.15, zorder=3, alpha=0.6)
+            self.ax.scatter(x=gap_x, y=gap_y, marker='+', c='white', s=self.markersize * 0.15, zorder=3, alpha=0.6)
 
+        # draw floor tiles on non-wall cells, slightly transparent
+        if self.theme.get('floor_color') is not None:
+            wall_set = set(self.walls)
+            floor_x, floor_y = [], []
+            for x in range(self.width):
+                for y in range(self.height):
+                    if (x, y) not in wall_set:
+                        floor_x.append(x)
+                        floor_y.append(y)
+            self.ax.scatter(x=floor_x, y=floor_y, marker='s', c=self.theme['floor_color'],
+                            s=self.markersize, alpha=0.5, zorder=0)
 
     # different colors for each robot
     COLORS = ['#00ffff', '#ff6b6b', '#6bff6b', '#ffaa00', '#aa6bff', '#ff69b4', '#ff4500']
@@ -222,16 +237,44 @@ class Illustrator:
     MARKERS = ['o', 'D', '^', 's', 'P', 'h', '*']
 
     def init_robots(self):
+        # health ring stays in both modes, goes green to red with health
         self.robot_outlines = []
-        self.robot_markers = []
         for i in range(self.n_robots):
-            # colored outer ring in the color of the robot 
-            outline = self.ax.scatter(x=[], y=[], marker=self.MARKERS[i], c=self.COLORS[i], zorder=2)
+            outline = self.ax.scatter(x=[], y=[], marker='o', vmin=0, vmax=100,
+                        c=[], cmap='RdYlGn', zorder=2)
             self.robot_outlines.append(outline)
-            marker = self.ax.scatter(x=[], y=[], marker=self.MARKERS[i],
-                        edgecolors='black', linewidths=1, vmin=0, vmax=100,
-                        c=[], cmap='Reds_r', zorder=3)
-            self.robot_markers.append(marker)
+
+        if self.theme['wall_image'] is not None:   # themed: robot is a tinted image
+            # load the grey robot once, then tint one copy per player
+            robot_img = plt.imread('illustrations/robot.png')
+            self.robot_boxes = []
+            for i in range(self.n_robots):
+                tinted = self.tint_image(robot_img, self.COLORS[i])
+                imagebox = OffsetImage(tinted, zoom=0.03)
+                box = AnnotationBbox(imagebox, (0, 0), frameon=False, zorder=3)
+                box.set_visible(False)   # hidden until the robot needs it
+                self.ax.add_artist(box)
+                self.robot_boxes.append(box)
+        else:   # default: plain shape markers, like before
+            self.robot_boxes = None
+            self.robot_markers = []
+            for i in range(self.n_robots):
+                marker = self.ax.scatter(x=[], y=[], marker=self.MARKERS[i],
+                            edgecolors='black', linewidths=1, vmin=0, vmax=100,
+                            c=[], cmap='Reds_r', zorder=3)
+                self.robot_markers.append(marker)
+
+    def tint_image(self, img, color):
+        # multiply a grayscale image with a color so we get a colored robot
+        # img is RGBA (0-1 floats), color is a matplotlib color
+        from matplotlib.colors import to_rgb
+        r, g, b = to_rgb(color)
+        tinted = img.copy()
+        tinted[:, :, 0] = img[:, :, 0] * r   # red channel
+        tinted[:, :, 1] = img[:, :, 1] * g   # green channel
+        tinted[:, :, 2] = img[:, :, 2] * b   # blue channel
+        # alpha channel (img[:, :, 3]) stays untouched so transparency is kept
+        return tinted
 
     def init_goldpots(self):
         # glow circle behind the pot, this is what pulses (easier and more readable than pulsing image)
@@ -243,7 +286,7 @@ class Illustrator:
             pot_img = plt.imread(self.theme['gold_image'])
             self.gold_boxes = []
             for _ in range(max_pots):
-                imagebox = OffsetImage(pot_img, zoom=0.02)
+                imagebox = OffsetImage(pot_img, zoom=0.018)
                 box = AnnotationBbox(imagebox, (0, 0), frameon=False, zorder=3)
                 box.set_visible(False)   # hidden until a pot needs it
                 self.ax.add_artist(box)
@@ -303,14 +346,26 @@ class Illustrator:
             self.goldpots.set_sizes(sizes if sizes else [])
 
         # robots
-        for j, (outline, marker) in enumerate(zip(self.robot_outlines, self.robot_markers)):
-            pos = [self.robotspos[i][j]]
-            size = self.robotsmoney[i][j]
-            outline.set_offsets(pos)
-            outline.set_sizes([size * 1.6]) # larger, so that the colored ring peeks out at the edges
-            marker.set_offsets(pos)
-            marker.set_sizes([size])
-            marker.set_array(np.array([self.robotshealth[i][j]]))
+        if self.robot_boxes is not None:   # themed: move robot images, ring shows health
+            for j, (outline, box) in enumerate(zip(self.robot_outlines, self.robot_boxes)):
+                pos = [self.robotspos[i][j]]
+                size = self.robotsmoney[i][j]
+                outline.set_offsets(pos)
+                outline.set_sizes([size * 1.6]) # larger, so the health ring peeks out behind the robot
+                outline.set_array(np.array([self.robotshealth[i][j]]))
+                box.xybox = self.robotspos[i][j]
+                box.xy = self.robotspos[i][j]
+                box.set_visible(True)
+        else:   # default: plain shape markers
+            for j, (outline, marker) in enumerate(zip(self.robot_outlines, self.robot_markers)):
+                pos = [self.robotspos[i][j]]
+                size = self.robotsmoney[i][j]
+                outline.set_offsets(pos)
+                outline.set_sizes([size * 1.6]) # larger, so that the colored ring peeks out at the edges
+                outline.set_array(np.array([self.robotshealth[i][j]]))
+                marker.set_offsets(pos)
+                marker.set_sizes([size])
+                marker.set_array(np.array([self.robotshealth[i][j]]))
             
         # mines
         if self.mine_boxes is not None:   # themed: move mine images, hide the rest

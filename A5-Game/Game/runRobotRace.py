@@ -17,7 +17,7 @@ parser.add_argument('--framerate', help="specify framerate of the visualization"
 parser.add_argument('--map', help="specify map file", type=str,default=None)
 parser.add_argument('--mine_mode', help="specify what mines do. Options are wall, scramble and damage", type=str, default="wall")
 parser.add_argument('--allow_jumps', help="allow players to jump over walls by running into the same direction twice", action=argparse.BooleanOptionalAction)
-parser.add_argument('--theme', type=str, default='default',choices=['default', 'desert', 'forest', 'garden'])
+parser.add_argument('--theme', type=str, default='default',choices=['default', 'desert', 'forest', 'garden', 'island'])
 
 
 args = parser.parse_args()
