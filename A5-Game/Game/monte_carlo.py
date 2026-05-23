@@ -138,6 +138,7 @@ for r in range(args.runs):
 for i, plot in enumerate(plots_per_player):
     plots_per_player[i] = tuple(plot)
 
+plt.title(f"Stats for {args.runs} {"Run" if args.runs==1 else "Runs"} of {args.rounds} Rounds")
 plt.xlabel("Rounds")
 plt.ylabel("Gold")
 plt.legend(
