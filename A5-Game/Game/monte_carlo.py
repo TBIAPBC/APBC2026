@@ -91,14 +91,17 @@ while i < args.runs:
     for j in range(i, min(i + args.chunksize, args.runs)):
         p,f = runs[j]
         p.wait()
+        print("\r" + ((args.runs + 7) * " "))
         print(f"Run {j+1}/{args.runs} completed.")
         numPlayers = analyze_run(j, runs)
+        print(str(100 * (j+1)//args.runs) + "% " + "[" + ((j+1) * "#") + ((args.runs - (j+1)) * " ") + "]", end="\r")
     i += args.chunksize
 
 
 finish_time = time.time()
 elapsed_time = finish_time - start_time
 
+print("")
 print("All runs completed in %.3f s." %elapsed_time)
 print("")
 
