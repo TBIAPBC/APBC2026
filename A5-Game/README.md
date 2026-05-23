@@ -17,11 +17,15 @@ Deadline: 26.5.
 script: podium.py
 testing: 
 ```cd A5-Game\Game
-python -c "from podium import draw_podium; draw_podium([('Bot Awesome', 500), ('Bot Brilliant', 320), ('Bot Capable', 180)])"
+ python -c "from podium import draw_podium; draw_podium([('Alice', 500), ('Bob', 320), ('Charlie', 180), ('Dave', 95)])"
 ```
 for final version:
-insert `from podium import draw_posium` intp `runRobotRace.py`
+insert `from podium import draw_posium` into `runRobotRace.py`
 
 
 _Status 12.5.26_ 
 This is only a very general idea of a possibe podium add-on.
+
+
+_Status 23.5.26_ 
+Added some additional features.
