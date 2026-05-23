@@ -79,10 +79,10 @@ def analyze_run(i, runs):
 print(f"Simulating {args.runs} runs of {args.rounds} rounds each in chunks of size {args.chunksize}...")
 start_time = time.time()
 
+bar_len = 50
 runs = []
 numPlayers = 0
 i = 0
-
 while i < args.runs:
     for j in range(i, min(i + args.chunksize, args.runs)):
         f = tempfile.TemporaryFile(mode='w+')
@@ -91,10 +91,11 @@ while i < args.runs:
     for j in range(i, min(i + args.chunksize, args.runs)):
         p,f = runs[j]
         p.wait()
-        print("\r" + ((args.runs + 7) * " "))
+        print("\r" + ((bar_len + 10) * " "))
         print(f"Run {j+1}/{args.runs} completed.")
         numPlayers = analyze_run(j, runs)
-        print(str(100 * (j+1)//args.runs) + "% " + "[" + ((j+1) * "#") + ((args.runs - (j+1)) * " ") + "]", end="\r")
+        progress = (j+1)/args.runs
+        print("[%3d%%]  "%int(100 * progress) + "[" + (int(progress * bar_len) * "#") + (int(bar_len - progress * bar_len) * " ") + "]", end="\r")
     i += args.chunksize
 
 
