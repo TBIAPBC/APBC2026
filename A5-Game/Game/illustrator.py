@@ -127,7 +127,7 @@ class Illustrator:
 
         fig, self.ax = plt.subplots(
             nrows=1, ncols=1, figsize=(8, 8))
-        fig.subplots_adjust(top=0.85)  
+        fig.subplots_adjust(top=0.92, bottom=0.28)
 
         self.init_plot()
         self.init_walls()
@@ -157,7 +157,7 @@ class Illustrator:
         gif = FuncAnimation(fig, self.illustrate_round,
                             self.n_rounds)
         gif.save(self.vizfile, 
-                 dpi=80, fps=self.FRAME_PER_SECOND) # higher dpi 
+                 dpi=100, fps=self.FRAME_PER_SECOND) # higher dpi 
 
     def init_plot(self):
         self.ax.tick_params(
@@ -226,54 +226,62 @@ class Illustrator:
             self.ax.plot([], [], color = self.COLORS[i], alpha=0.5, linewidth=self.linewidth,zorder=1, label=self.robot_names[i])[0]
             for i in range(self.n_robots)
         ]
-        legend_handles = [
-            plt.scatter([], [], marker=self.MARKERS[i], c=self.COLORS[i],
-                        edgecolors='black', linewidths=1, label=self.robot_names[i])
-            for i in range(self.n_robots)
-        ]
-        self.ax.legend(handles=legend_handles, loc='lower left', bbox_to_anchor=(0.0, 1.0), prop=dict(size=8), framealpha = 0.7)
+
+        # robot legend at the bottom in every theme () max 4 per row then wrap)
+        robot_img = plt.imread('illustrations/robot_3.png')
+        per_row = 4
+        # "Players" title above the legend rows
+        self.ax.text(0, -1.6, 'Players', ha='left', va='top',
+                     fontsize=10, fontweight='bold', clip_on=False)
+        for i in range(self.n_robots):
+            row = i // per_row
+            col = i % per_row
+            # fixed spacing, packed from the left
+            x = 3 + col * 7
+            y = -4.2 - row * 5   # each extra row goes further down
+            tinted = self.tint_image(robot_img, self.COLORS[i])
+            imagebox = OffsetImage(tinted, zoom=0.055)   # small enough to fit a row nicely
+            box = AnnotationBbox(imagebox, (x, y), frameon=False, annotation_clip=False)
+            self.ax.add_artist(box)
+            # name under each robot
+            self.ax.text(x, y - 2.2, self.robot_names[i], ha='center', va='top',
+                         fontsize=7, clip_on=False)
 
     # different markers for each robot 
     MARKERS = ['o', 'D', '^', 's', 'P', 'h', '*']
 
     def init_robots(self):
-        # health ring stays in both modes, goes green to red with health
+        # health ring goes green to red with health
         self.robot_outlines = []
         for i in range(self.n_robots):
             outline = self.ax.scatter(x=[], y=[], marker='o', vmin=0, vmax=100,
                         c=[], cmap='RdYlGn', zorder=2)
             self.robot_outlines.append(outline)
 
-        if self.theme['wall_image'] is not None:   # themed: robot is a tinted image
-            # load the grey robot once, then tint one copy per player
-            robot_img = plt.imread('illustrations/robot.png')
-            self.robot_boxes = []
-            for i in range(self.n_robots):
-                tinted = self.tint_image(robot_img, self.COLORS[i])
-                imagebox = OffsetImage(tinted, zoom=0.03)
-                box = AnnotationBbox(imagebox, (0, 0), frameon=False, zorder=3)
-                box.set_visible(False)   # hidden until the robot needs it
-                self.ax.add_artist(box)
-                self.robot_boxes.append(box)
-        else:   # default: plain shape markers, like before
-            self.robot_boxes = None
-            self.robot_markers = []
-            for i in range(self.n_robots):
-                marker = self.ax.scatter(x=[], y=[], marker=self.MARKERS[i],
-                            edgecolors='black', linewidths=1, vmin=0, vmax=100,
-                            c=[], cmap='Reds_r', zorder=3)
-                self.robot_markers.append(marker)
+        # robots are now tinted images in every theme --> default included
+        # load the grey robot and tinte it but only once 
+        robot_img = plt.imread('illustrations/robot.png')
+        self.robot_boxes = []
+        for i in range(self.n_robots):
+            tinted = self.tint_image(robot_img, self.COLORS[i])
+            imagebox = OffsetImage(tinted, zoom=0.03)
+            box = AnnotationBbox(imagebox, (0, 0), frameon=False, zorder=3)
+            box.set_visible(False)   # hidden until the robot needs it
+            self.ax.add_artist(box)
+            self.robot_boxes.append(box)
 
     def tint_image(self, img, color):
-        # multiply a grayscale image with a color so we get a colored robot
-        # img is RGBA (0-1 floats), color is a matplotlib color
+        # tint only the light parts dark parts stay neutral
+        # img is RGBA (0-1 floats)
         from matplotlib.colors import to_rgb
         r, g, b = to_rgb(color)
         tinted = img.copy()
-        tinted[:, :, 0] = img[:, :, 0] * r   # red channel
-        tinted[:, :, 1] = img[:, :, 1] * g   # green channel
-        tinted[:, :, 2] = img[:, :, 2] * b   # blue channel
-        # alpha channel (img[:, :, 3]) stays untouched so transparency is kept
+        # brightness of each pixel
+        strength = img[:, :, :3].mean(axis=2)
+        tinted[:, :, 0] = img[:, :, 0] * (1 - strength) + r * strength
+        tinted[:, :, 1] = img[:, :, 1] * (1 - strength) + g * strength
+        tinted[:, :, 2] = img[:, :, 2] * (1 - strength) + b * strength
+        # alpha channel stays untouched so transparency in background is kept
         return tinted
 
     def init_goldpots(self):
@@ -317,9 +325,9 @@ class Illustrator:
         if not (i+1) % 10:
             print('illustrating step', i+1)
 
-        # figure
-        title = str(i+1)
-        self.ax.set_title(title, fontsize=20)
+        # counter, top left
+        title = 'Counter: ' + str(i+1)
+        self.ax.set_title(title, fontsize=16, loc='left')
 
         # goldpots
         sizes = []
@@ -345,27 +353,16 @@ class Illustrator:
             self.goldpots.set_offsets(self.goldpos[i] if self.goldpos[i] else np.empty((0, 2)))
             self.goldpots.set_sizes(sizes if sizes else [])
 
-        # robots
-        if self.robot_boxes is not None:   # themed: move robot images, ring shows health
-            for j, (outline, box) in enumerate(zip(self.robot_outlines, self.robot_boxes)):
-                pos = [self.robotspos[i][j]]
-                size = self.robotsmoney[i][j]
-                outline.set_offsets(pos)
-                outline.set_sizes([size * 1.6]) # larger, so the health ring peeks out behind the robot
-                outline.set_array(np.array([self.robotshealth[i][j]]))
-                box.xybox = self.robotspos[i][j]
-                box.xy = self.robotspos[i][j]
-                box.set_visible(True)
-        else:   # default: plain shape markers
-            for j, (outline, marker) in enumerate(zip(self.robot_outlines, self.robot_markers)):
-                pos = [self.robotspos[i][j]]
-                size = self.robotsmoney[i][j]
-                outline.set_offsets(pos)
-                outline.set_sizes([size * 1.6]) # larger, so that the colored ring peeks out at the edges
-                outline.set_array(np.array([self.robotshealth[i][j]]))
-                marker.set_offsets(pos)
-                marker.set_sizes([size])
-                marker.set_array(np.array([self.robotshealth[i][j]]))
+        # robots: move robot images, ring shows health
+        for j, (outline, box) in enumerate(zip(self.robot_outlines, self.robot_boxes)):
+            pos = [self.robotspos[i][j]]
+            size = self.robotsmoney[i][j]
+            outline.set_offsets(pos)
+            outline.set_sizes([size * 1.6]) # larger, so the health ring peeks out behind the robot
+            outline.set_array(np.array([self.robotshealth[i][j]]))
+            box.xybox = self.robotspos[i][j]
+            box.xy = self.robotspos[i][j]
+            box.set_visible(True)
             
         # mines
         if self.mine_boxes is not None:   # themed: move mine images, hide the rest
