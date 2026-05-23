@@ -1,3 +1,5 @@
+# python3 monte_carlo.py -v test.png
+
 import re
 import subprocess
 import tempfile
@@ -5,6 +7,8 @@ from dataclasses import dataclass
 from argparse import ArgumentParser
 import matplotlib.pyplot as plt
 from matplotlib.legend_handler import HandlerTuple
+import time
+
 
 @dataclass
 class StatsRecord:
@@ -31,6 +35,7 @@ args = arg_parser.parse_args()
 
 
 print(f"Simulating {args.runs} runs of {args.rounds} rounds each...")
+start_time = time.time()
 
 runs = []
 for i in range(args.runs):
@@ -43,7 +48,10 @@ for i, run in enumerate(runs):
     p.wait()
     print(f"Run {i+1}/{len(runs)} completed.")
 
-print("All runs completed.")
+finish_time = time.time()
+elapsed_time = finish_time - start_time
+
+print("All runs completed in %.3f s." %elapsed_time)
 print("Commencing analysis...")
 print("")
 
@@ -68,7 +76,6 @@ for i, run in enumerate(runs):
             record = StatsRecord(line.split())
             results.append(record)
             numPlayers += 1
-            # player_id, player_name, hp, gold, pos = tuple(line.split())
 
     results_per_run.append(results)
 
@@ -97,9 +104,7 @@ print(f"Average gold at end: {avgGold}")
 
 x = list(range(args.rounds + 2))
 
-# print(y)
-# def plot_run(r: int):
-    # y = []
+
 color_per_player = [
     '#ff000044',
     '#00ff0044',
@@ -111,39 +116,22 @@ color_per_player = [
 plots_per_player = [[] for p in range(numPlayers)]
 for r in range(args.runs):
     gold_per_player  = [[] for p in range(numPlayers)]
-    # print(len(results_per_run[r]))
     for i in range(len(results_per_run[r])):
-        # y.append(results_per_run[r][i])
         gold_per_player[i % numPlayers].append(results_per_run[r][i])
-    # for player_index, y in enumerate(gold_per_player):
-    #     plt.plot(x, list(map(lambda stat: stat.gold, y)), label=y[0].player_name)
 
     for player_index, y in enumerate(gold_per_player):
         plot = plt.plot(x, list(map(lambda stat: stat.gold, y)),
                         label=y[0].player_name,
                         color=color_per_player[player_index])
         plots_per_player[player_index % numPlayers].extend(plot)
-        # plots_per_player[player_index % numPlayers].append(plot)
-        # print(plot)
-        # print(plots_per_player[player_index % numPlayers])
 for i, plot in enumerate(plots_per_player):
     plots_per_player[i] = tuple(plot)
 
-# for r in range(args.runs):
-    # plot_run(r)
-# plot_run(0)
-
-
-# plt.legend()
-# print(plots_per_player)
-# print(list(range(len(plots_per_player))))
 plt.xlabel("Rounds")
 plt.ylabel("Gold")
 plt.legend(
     plots_per_player,
     avgGold.keys(),
-    # list(range(len(plots_per_player))),
     handler_map={tuple: HandlerTuple(ndivide=None)}
 )
 plt.savefig(args.viz)
-# plt.show()
