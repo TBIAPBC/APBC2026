@@ -34,32 +34,12 @@ arg_parser.add_argument("-v", "--viz",       help="Output file (eg. viz.png)",  
 args = arg_parser.parse_args()
 
 
-print(f"Simulating {args.runs} runs of {args.rounds} rounds each...")
-start_time = time.time()
-
-runs = []
-for i in range(args.runs):
-    f = tempfile.TemporaryFile(mode='w+')
-    p = subprocess.Popen(["python3", "runRobotRace.py", "--number", str(args.rounds)], stdout=f)
-    runs.append((p,f))
-
-for i, run in enumerate(runs):
-    p,f = run
-    p.wait()
-    print(f"Run {i+1}/{len(runs)} completed.")
-
-finish_time = time.time()
-elapsed_time = finish_time - start_time
-
-print("All runs completed in %.3f s." %elapsed_time)
-print("Commencing analysis...")
-print("")
-
-numPlayers = -1
 numWins = {}
 avgGold = {}
 results_per_run = []
-for i, run in enumerate(runs):
+def analyze_run(i, runs):
+    numPlayers = -1
+    run = runs[i]
     p,f = run
     f.seek(0)
     results = []
@@ -95,6 +75,30 @@ for i, run in enumerate(runs):
             avgGold[stat.player_name] = stat.gold
         print(stat)
     print("")
+    return numPlayers
+
+print(f"Simulating {args.runs} runs of {args.rounds} rounds each...")
+start_time = time.time()
+
+runs = []
+for i in range(args.runs):
+    f = tempfile.TemporaryFile(mode='w+')
+    p = subprocess.Popen(["python3", "runRobotRace.py", "--number", str(args.rounds)], stdout=f)
+    runs.append((p,f))
+
+numPlayers = 0
+for i, run in enumerate(runs):
+    p,f = run
+    p.wait()
+    print(f"Run {i+1}/{len(runs)} completed.")
+    numPlayers = analyze_run(i, runs)
+
+finish_time = time.time()
+elapsed_time = finish_time - start_time
+
+print("All runs completed in %.3f s." %elapsed_time)
+print("")
+
 
 for player_name in avgGold.keys():
     avgGold[player_name] //= args.runs
