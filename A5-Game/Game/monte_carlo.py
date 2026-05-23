@@ -29,7 +29,7 @@ class StatsRecord:
 arg_parser = ArgumentParser(description="Robot Race Monte-Carlo Simulator 7000")
 arg_parser.add_argument("-n", "--runs",      help="Number of games to simulate", type=int, default=10)
 arg_parser.add_argument("-r", "--rounds",    help="Number of rounds per game",   type=int, default=100)
-arg_parser.add_argument("-c", "--chunksize", help="Number of games per chunk",   type=int, default=4)
+arg_parser.add_argument("-c", "--chunksize", help="Number of games per chunk",   type=int, default=16)
 arg_parser.add_argument("-v", "--viz",       help="Output file (eg. viz.png)",   type=str, default="viz.png")
 args = arg_parser.parse_args()
 
@@ -59,7 +59,6 @@ def analyze_run(i, runs):
 
     results_per_run.append(results)
 
-    print(f"Run {i+1}/{len(runs)} analyzed:")
     end_result = results[-numPlayers:]
     winner = max(end_result, key=lambda stat: stat.gold)
     if winner.player_name in numWins:
@@ -77,21 +76,25 @@ def analyze_run(i, runs):
     print("")
     return numPlayers
 
-print(f"Simulating {args.runs} runs of {args.rounds} rounds each...")
+print(f"Simulating {args.runs} runs of {args.rounds} rounds each in chunks of size {args.chunksize}...")
 start_time = time.time()
 
 runs = []
-for i in range(args.runs):
-    f = tempfile.TemporaryFile(mode='w+')
-    p = subprocess.Popen(["python3", "runRobotRace.py", "--number", str(args.rounds)], stdout=f)
-    runs.append((p,f))
-
 numPlayers = 0
-for i, run in enumerate(runs):
-    p,f = run
-    p.wait()
-    print(f"Run {i+1}/{len(runs)} completed.")
-    numPlayers = analyze_run(i, runs)
+i = 0
+
+while i < args.runs:
+    for j in range(i, min(i + args.chunksize, args.runs)):
+        f = tempfile.TemporaryFile(mode='w+')
+        p = subprocess.Popen(["python3", "runRobotRace.py", "--number", str(args.rounds)], stdout=f)
+        runs.append((p,f))
+    for j in range(i, min(i + args.chunksize, args.runs)):
+        p,f = runs[j]
+        p.wait()
+        print(f"Run {j+1}/{args.runs} completed.")
+        numPlayers = analyze_run(j, runs)
+    i += args.chunksize
+
 
 finish_time = time.time()
 elapsed_time = finish_time - start_time
