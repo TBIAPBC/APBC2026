@@ -9,18 +9,18 @@ The script_dir is the directory from which the code is being executed. If you pl
 ## Adding new robots
 
 If you build your robot in the base Game folder from main, then you need to adjust the import path of your python bot script. Your current imports should be something like this:
-    - game_utils
-    - player_base
-    - etc.
+- game_utils
+- player_base
+ - etc.
 
 Please change it to:
-    - Game.game_utils
-    - Game.player_base
-    - etc.
+- Game.game_utils
+- Game.player_base
+- etc.
 
 Since the bots are no longer in the same folder as the game import files, the path to the imports has changed. If you choose to make additional subfolders within Robots then keep in mind that all imports must be adjusted accordingly.
 
-The same goes for the imports of your bots. They need to be adjusted to contsin Game. before the import.
+The same goes for the imports of your bots. They need to be adjusted to contain Game. before the import.
 
 You can then add your bots to the Robots folder and run the test.
 
