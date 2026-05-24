@@ -19,9 +19,6 @@ testing:
 ```cd A5-Game\Game
  python -c "from podium import draw_podium; draw_podium([('Alice', 500), ('Bob', 320), ('Charlie', 180), ('Dave', 95)])"
 ```
-for final version:
-insert `from podium import draw_posium` into `runRobotRace.py`
-
 
 _Status 12.5.26_ 
 This is only a very general idea of a possibe podium add-on.
@@ -29,3 +26,8 @@ This is only a very general idea of a possibe podium add-on.
 
 _Status 23.5.26_ 
 Added some additional features.
+
+_Status 24.5.26_ 
+Connected podium.py to runRobotRace
+Added custom Avatars
+Small visual adjustments

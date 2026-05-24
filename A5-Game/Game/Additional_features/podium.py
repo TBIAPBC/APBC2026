@@ -2,6 +2,9 @@ import random
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.font_manager import FontProperties
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from PIL import Image
+from pathlib import Path
 
 _EMOJI_FONT = FontProperties(family="Segoe UI Emoji")
 
@@ -13,7 +16,7 @@ TEXT_COLOR   = "#1a1a2e"
 GOLD_COLOR   = "#e0c040"
 
 
-def _draw_confetti(ax, n=200, xlim=(-0.6, 2.6), ylim=(0, 1.8)):
+def _draw_confetti(ax, n=260, xlim=(-1, 3.6), ylim=(0, 2)):
     xs = [random.uniform(*xlim) for _ in range(n)]
     ys = [random.uniform(*ylim) for _ in range(n)]
     colors = [random.choice(CONFETTI_COLORS) for _ in range(n)]
@@ -25,30 +28,48 @@ def _draw_confetti(ax, n=200, xlim=(-0.6, 2.6), ylim=(0, 1.8)):
                    alpha=random.uniform(0.5, 1.0), zorder=0)
 
 
-def _draw_robot(ax, cx, base_y):
-    hw = 0.075   # body half-width
-    bh = 0.13    # body height
-    hr = 0.065   # head radius
-    er = 0.018   # eye radius
+def _draw_robot_img(ax, cx, base_y, img_name):
+    script_dir = Path(__file__).resolve().parent
+    img_path = script_dir / "bot_imgs" / img_name
+    # Set zoom based on size of the image to fit a standard width (e.g., target width = 0.18 units)
+    if img_path.exists():
+        botImg = Image.open(img_path).convert("RGBA")
+    else:
+        print(f"Error: Could not find the image at {img_path}")
+        print(f"Used Default Img instead")
+        # default img as fallback
+        img_path = script_dir / "bot_imgs" / "default_bot.png"
+        botImg = Image.open(img_path).convert("RGBA")
 
-    ax.add_patch(patches.FancyBboxPatch(
-        (cx - hw, base_y), 2 * hw, bh,
-        boxstyle="round,pad=0.01",
-        facecolor="white", edgecolor=BG_COLOR, linewidth=1, zorder=3,
-    ))
-    ax.add_patch(patches.Circle(
-        (cx, base_y + bh + hr), hr,
-        facecolor="white", edgecolor=BG_COLOR, linewidth=1, zorder=3,
-    ))
-    ax.add_patch(patches.Circle((cx - 0.025, base_y + bh + hr), er, facecolor=BG_COLOR, zorder=4))
-    ax.add_patch(patches.Circle((cx + 0.025, base_y + bh + hr), er, facecolor=BG_COLOR, zorder=4))
-    return base_y + bh + 2 * hr  # returns top of robot
+    orig_w, orig_h = botImg.size
+    target_size = 100  # This should align robot images to the graphical scale of podium
+    zoom = min(target_size / orig_w, target_size / orig_h)
+    #print(f"orig_w: {orig_w}, orig_h: {orig_h}, zoom: {zoom}", img_name)
+    im = OffsetImage(botImg, zoom=zoom)
+    ab = AnnotationBbox(
+        im, (cx, base_y),
+        xycoords='data',
+        box_alignment=(0.5, 0.0),
+        frameon=False
+    )
+    ax.add_artist(ab)
+    return base_y + 0.42  # returns top of robot, base_y + img height
 
+def _draw_robot(ax, cx, base_y, bot_name):
+    if bot_name == "GoldDigger-Bot-Basic":
+        return _draw_robot_img(ax, cx, base_y, "GoldDiggerBot.png")
+    elif bot_name == "NonRandom":
+        return _draw_robot_img(ax, cx, base_y, "dice.png")
+    #elif bot_name == "YOUR_NAME_HERE":
+    #    return _draw_robot_img(ax, cx, base_y, "YOUR_IMG_HERE.png")
+    else:
+        return _draw_robot_img(ax, cx, base_y, "default_bot.png")
+   
 
 def draw_podium(standings, output_file="podium.png"):
     """
     standings: list of (player_name, gold) sorted by gold descending.
-    Saves a podium PNG to output_file.
+    Displays a podium PNG and saves it to output_file.
     """
     top3 = list(standings[:3])
     while len(top3) < 3:
@@ -62,15 +83,16 @@ def draw_podium(standings, output_file="podium.png"):
     ]
 
     fig, ax = plt.subplots(figsize=(10, 6))
+    fig.patch.set_alpha(1)
     fig.patch.set_facecolor(BG_COLOR)
     ax.set_facecolor(BG_COLOR)
-    ax.set_xlim(-0.6, 3.6)
+    ax.set_xlim(-1, 3.6)
     ax.set_ylim(0, 2.0)
     ax.axis("off")
     ax.set_title("Final Results", fontsize=35, fontweight="bold",
                  pad=16, color="#f0f0f0")
 
-    _draw_confetti(ax, xlim=(-0.6, 3.6))
+    _draw_confetti(ax)
 
     bar_width = 0.75
 
@@ -85,10 +107,12 @@ def draw_podium(standings, output_file="podium.png"):
         ax.text(x, h / 2.2, medal, ha="center", va="center",
                 fontsize=22, zorder=2, fontproperties=_EMOJI_FONT)
 
-        robot_top = _draw_robot(ax, x, h)
+        robot_top = _draw_robot(ax, x, h, name)
 
-        ax.text(x, robot_top - 0.35, name, ha="center", va="center",
-                fontsize=20, fontweight="bold", color=BG_COLOR, zorder=3)
+        name_size = max(9, 20 - int((len(name) - 6)*1.4))  # Reduce font size smoothly for longer names
+       
+        ax.text(x, robot_top - 0.5, name, ha="center", va="center",
+                fontsize=name_size, fontweight="bold", color=BG_COLOR, zorder=3)
         ax.text(x, robot_top + 0.15, f"{gold} gold", ha="center", va="center",
                 fontsize=10, color=GOLD_COLOR, zorder=3,
                 bbox=dict(boxstyle="round,pad=0.3", facecolor=BG_COLOR,
@@ -97,9 +121,12 @@ def draw_podium(standings, output_file="podium.png"):
     # 4th place — standing on the floor, not on the podium
     if len(standings) >= 4:
         name4, gold4 = standings[3]
-        robot_top4 = _draw_robot(ax, 2.8, 0)
-        ax.text(2.8, robot_top4 + 0.09, name4, ha="center", va="center",
-                fontsize=20, fontweight="bold", color="white", zorder=3)
+        robot_top4 = _draw_robot(ax, 2.8, 0, name4)
+        name_size = max(9, 20 - int((len(name4) - 6)*1.4)) -2  # Reduce font size smoothly for longer names
+        ax.text(2.8, robot_top4 + 0.12, name4, ha="center", va="center",
+                fontsize=name_size, fontweight="bold", color="white", zorder=3,
+                bbox=dict(boxstyle="round,pad=0.17", facecolor=BG_COLOR,
+                          edgecolor="white", linewidth=1.5))
         ax.text(2.8, robot_top4 + 0.25, f"{gold4} gold", ha="center", va="center",
                 fontsize=10, color=GOLD_COLOR, zorder=3,
                 bbox=dict(boxstyle="round,pad=0.3", facecolor=BG_COLOR,
@@ -109,11 +136,23 @@ def draw_podium(standings, output_file="podium.png"):
                 bbox=dict(boxstyle="round,pad=0.3", facecolor=BG_COLOR,
                           edgecolor="white", linewidth=1.5))
 
+    
     plt.tight_layout()
     plt.savefig(output_file, dpi=120, bbox_inches="tight",
                 facecolor=fig.get_facecolor())
+    plt.show()
     plt.close()
     print(f"Podium saved to {output_file}")
 
-
-# python -c "from podium import draw_podium; draw_podium([('Alice', 500), ('Bob', 320), ('Charlie', 180)])"
+def draw_podium_from_game_info(game):
+    players = game._players
+    names = [getattr(p, 'player_name') for p in players]
+    golds = [getattr(p.status, 'gold') for p in players]
+    standings = sorted(
+        zip(names, golds),
+        key=lambda x: x[1],
+        reverse=True
+    )
+    print(standings)
+    draw_podium(standings)
+    draw_podium([('Alice', 500), ('Bob', 320), ('Charlie', 180), ('Diana', 99)])

@@ -7,7 +7,6 @@ from game_utils import Direction as D, MoveStatus
 from game_utils import Tile, TileStatus, TileObject
 from game_utils import Map, Status
 from simulator import Simulator
-
 from player_base import Player
 
 parser = argparse.ArgumentParser(description="Robot Race Simulator 7000")
@@ -18,6 +17,7 @@ parser.add_argument('--framerate', help="specify framerate of the visualization"
 parser.add_argument('--map', help="specify map file", type=str,default=None)
 parser.add_argument('--mine_mode', help="specify what mines do. Options are wall, scramble and damage", type=str, default="wall")
 parser.add_argument('--allow_jumps', help="allow players to jump over walls by running into the same direction twice", action=argparse.BooleanOptionalAction)
+parser.add_argument('-p', '--podium', help="display the podium at the end of the game", action=argparse.BooleanOptionalAction)
 
 args = parser.parse_args()
 
@@ -38,4 +38,4 @@ for name,module_name in robot_module_names.items():
 		p.player_modname = name
 		sim.add_player(p)
 
-sim.play(rounds=args.number, jumps_allowed=args.allow_jumps, mine_mode=args.mine_mode.lower())
+sim.play(rounds=args.number, jumps_allowed=args.allow_jumps, mine_mode=args.mine_mode.lower(), show_podium=args.podium)
