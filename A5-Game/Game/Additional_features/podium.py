@@ -31,7 +31,6 @@ def _draw_confetti(ax, n=260, xlim=(-1, 3.6), ylim=(0, 2)):
 def _draw_robot_img(ax, cx, base_y, img_name):
     script_dir = Path(__file__).resolve().parent
     img_path = script_dir / "bot_imgs" / img_name
-    # Set zoom based on size of the image to fit a standard width (e.g., target width = 0.18 units)
     if img_path.exists():
         botImg = Image.open(img_path).convert("RGBA")
     else:
@@ -153,6 +152,5 @@ def draw_podium_from_game_info(game):
         key=lambda x: x[1],
         reverse=True
     )
-    print(standings)
     draw_podium(standings)
-    draw_podium([('Alice', 500), ('Bob', 320), ('Charlie', 180), ('Diana', 99)])
+    #draw_podium([('Alice', 500), ('Bob', 320), ('Charlie', 180), ('Diana', 99)])
