@@ -13,11 +13,20 @@ class BasicBot(Player):
         def reset(self, player_id, max_players, width, height):
                 self.player_name = "Team_1_GoldDigger"
                 self.ourMap = Map(width, height)
+                self.mine_memory = {}
 
         def round_begin(self, r):
                  #map memory
                 #store status of fields that you see from the current position
                 status = self.status
+
+                #delete expired mines from map and mine memory
+                for pos, expiry_round in list(self.mine_memory.items()):
+                        if r >= expiry_round:
+                                del self.mine_memory[pos]
+                                if self.ourMap[pos].status == TileStatus.Mine:
+                                        self.ourMap[pos].status = TileStatus.Empty
+
                 for dx in range(-status.params.visibility, status.params.visibility +1):
                         for dy in range(-status.params.visibility, status.params.visibility +1):
                                 x = status.x + dx 
@@ -27,8 +36,16 @@ class BasicBot(Player):
                                 if not self.is_inside_map((x, y)):
                                         continue
 
-                                if status.map[x,y].status != TileStatus.Unknown:
-                                        self.ourMap[x,y].status = status.map[x,y].status
+                                tile_status = status.map[x,y].status
+
+                                if  tile_status != TileStatus.Unknown:
+                                        self.ourMap[x,y].status = tile_status
+
+                                        if tile_status == TileStatus.Mine:
+                                                if (x,y) not in self.mine_memory:
+                                                        self.mine_memory[(x,y)] = r + status.params.mineExpiryTime
+                                        elif tile_status == TileStatus.Empty:
+                                                self.mine_memory.pop((x,y), None)
 
         def is_inside_map(self, position):
                 x, y = position
