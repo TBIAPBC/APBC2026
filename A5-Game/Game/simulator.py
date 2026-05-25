@@ -14,6 +14,8 @@ from game_utils import Tile, TileStatus, TileObject
 from game_utils import Map, Status, GameParameters
 
 from illustrator import Illustrator
+from Additional_features.podium import draw_podium_from_game_info
+
 
 class Simulator(object):
 	def __init__(self, *, map, seed=None, vizfile=None, framerate):
@@ -80,7 +82,7 @@ class Simulator(object):
 		# duplicate the public status object in the player object
 		p.status = self._pubStat[-1]
 
-	def play(self, *, rounds, mine_mode, jumps_allowed=False):
+	def play(self, *, rounds, mine_mode, jumps_allowed=False, show_podium=False):
 		rounds = int(rounds)
 		self.mine_mode = mine_mode
 		self.jumps_allowed = jumps_allowed
@@ -117,6 +119,8 @@ class Simulator(object):
 		if self.illustrator.vizfile:
 			self.illustrator._illustrate()
 
+		if show_podium:
+			draw_podium_from_game_info(self)	
 
 	# relocate gold pot(s)
 	def _empty_and_relocate_gold_pots(self):
