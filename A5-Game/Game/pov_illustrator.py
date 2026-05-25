@@ -7,7 +7,25 @@ from game_utils import TileStatus
 
 
 class PovIllustrator:
+    
     def __init__(self, maps, positions, player_name, goldpots, others, health, gold, vizfile, framerate):
+        """
+        Initialize a PovIllustrator.
+
+        Args:
+            maps: list of player-local `Map` snapshots (one per round).
+            positions: list of (x,y) player positions per round.
+            player_name: display name for the player (used in titles/filenames).
+            goldpots: list of dicts mapping gold coordinates to amounts per round.
+            others: list of lists of visible other players ((player,x,y) tuples) per round.
+            health: list of health values per round.
+            gold: list of gold amounts per round.
+            vizfile: output filename for the generated GIF.
+            framerate: frames per second for the animation.
+
+        Side effects:
+            Prints a short message announcing the POV being illustrated.
+        """
         print(f'Illustrating POV for {player_name}')
         self.maps = maps
         self.positions = positions
@@ -23,6 +41,18 @@ class PovIllustrator:
         self.height = maps[0].height
          
     def _map_to_array(self, m):
+        """
+        Convert a player-local `Map` object into a 2D numpy array of integers.
+
+        The mapping of `TileStatus` to integers is:
+            Unknown -> 0, Empty -> 1, Wall -> 2, Mine -> 3
+
+        Args:
+            m: a `Map`-like object supporting indexing `m[x, y]` with a `.status` field.
+
+        Returns:
+            A numpy array of shape (height, width) with integer codes.
+        """
         arr = np.zeros((self.height, self.width), dtype=int)
 
         for x in range(self.width):
@@ -44,6 +74,13 @@ class PovIllustrator:
         return arr
 
     def illustrate(self):
+        """
+        Create and save the POV animation as a GIF.
+
+        Builds a matplotlib figure, initializes the first frame from the
+        captured maps/positions, then uses `FuncAnimation` to step through
+        all rounds and saves the resulting animation to `self.vizfile`.
+        """
         fig, self.ax = plt.subplots(figsize=(8, 8))
 
         self.ax.tick_params(bottom=False, left=False)
@@ -76,6 +113,16 @@ class PovIllustrator:
         
    
     def _illustrate_round(self, i):
+        """
+        Render a single frame (round `i`) of the POV animation.
+
+        This updates the background map image, the robot marker, gold pot
+        markers, the positions of visible other players, and the status text
+        (health and gold) for the given round index.
+
+        Args:
+            i: integer round index (0-based).
+        """
         arr = self._map_to_array(self.maps[i])
         self.img.set_data(arr)
 
@@ -85,7 +132,7 @@ class PovIllustrator:
         gold_dict = self.goldpots_history[i]
         gold_pos = list(gold_dict.keys())
         gold_amount = list(gold_dict.values())
-        self.goldpots.remove()
+        self.goldpots.remove() # I had some trouble with goldpots lingering even after the were taken or relocated, so I remove and replace them
 
         gold_arr = np.array(gold_pos, dtype=float)
 
@@ -108,8 +155,7 @@ class PovIllustrator:
         else:
             self.others_scatter.set_offsets(np.empty((0, 2), dtype=float))
         
-        # Title and health gold status text
-            
+        # Title and health/gold status text   
         self.ax.set_title(f"{self.player_name} POV - Round {i+1}", fontsize=16)
         
         health = self.health_history[i]

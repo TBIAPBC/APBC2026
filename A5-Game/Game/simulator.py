@@ -54,6 +54,7 @@ class Simulator(object):
 		self._status = status = []
 		# the object we give the player each time, updated from the internal data
 		self._pubStat = pubStat = []  
+  
 		self.pov = pov
 		self.illustrator = Illustrator(self.map, vizfile, framerate)
 
@@ -80,9 +81,7 @@ class Simulator(object):
 
 		# duplicate the public status object in the player object
 		p.status = self._pubStat[-1]
-  
-	
-  
+  	
 	def play(self, *, rounds, mine_mode, jumps_allowed=False):
 		rounds = int(rounds)
 		self.mine_mode = mine_mode
@@ -98,9 +97,10 @@ class Simulator(object):
 		
 		self.illustrator._add_robots(self._players)
 		self.illustrator._add_nrounds(rounds)
-  
-		self.pov_histories = {}
-		self._init_pov_histories()
+
+		# create dictionary to hold data player see about themselves.
+		self.pov_data = {}
+		self._init_pov_data()
   
 		if self.printInitial:
 			print("Initial board:")
@@ -124,9 +124,11 @@ class Simulator(object):
 
 		if self.illustrator.vizfile:
 			self.illustrator._illustrate()
-   
+
+		# for every player i that has an entry in our pov dictionary the data gets send to the PovIllustrator class and
+		# used in the functions there to create the visualization
 		if self.pov:
-			for i, data in self.pov_histories.items():
+			for i, data in self.pov_data.items():
 				if len(data['maps']) == 0:
 					continue
 
@@ -145,13 +147,20 @@ class Simulator(object):
 				pov_illustrator.illustrate()
 				
 
-	def _init_pov_histories(self):
+	def _init_pov_data(self):
+		'''
+		if pov flag is set it checks if every player has an internal map called "ourMap" and 
+		collects necesary data in dictionary. (players are numbered in the order they are listed in _players, 
+  		and that number is the dictionary key. each dictionary entry is another dictionary with every attribute as
+    	key and initialized with an empty list to hold values for every round.)
+     
+    	'''
 		if not self.pov:
 			return
 
 		for i, player in enumerate(self._players):
 			if hasattr(player, 'ourMap'):
-				self.pov_histories[i] = {
+				self.pov_data[i] = {
 					'name': getattr(player, 'player_name', f'player_{i}'),
 					'maps': [],
 					'positions': [],
@@ -162,18 +171,22 @@ class Simulator(object):
 				}
     
 	def _record_pov_snapshots(self):
+		'''
+  		gets called every round and fills the dictionary with the information the player has in the current round
+    	'''
+  
 		if not self.pov:
 			return
 
 		for i, player in enumerate(self._players):
-			if i not in self.pov_histories:
+			if i not in self.pov_data:
 				continue
 
-			self.pov_histories[i]['maps'].append(copy.deepcopy(player.ourMap))
-			self.pov_histories[i]['positions'].append((player.status.x, player.status.y))
-			self.pov_histories[i]['goldpots'].append(copy.deepcopy(self._goldPots))
-			self.pov_histories[i]['health'].append(player.status.health)
-			self.pov_histories[i]['gold'].append(player.status.gold)
+			self.pov_data[i]['maps'].append(copy.deepcopy(player.ourMap))
+			self.pov_data[i]['positions'].append((player.status.x, player.status.y))
+			self.pov_data[i]['goldpots'].append(copy.deepcopy(self._goldPots))
+			self.pov_data[i]['health'].append(player.status.health)
+			self.pov_data[i]['gold'].append(player.status.gold)
    
 			visible_others = []
    
@@ -181,9 +194,8 @@ class Simulator(object):
 				if other is not None:
 					visible_others.append((other.player, other.x, other.y))
 
-			self.pov_histories[i]['others'].append(visible_others)
-   
-		
+			self.pov_data[i]['others'].append(visible_others)
+   	
     # relocate gold pot(s)
 	def _empty_and_relocate_gold_pots(self):
 		for coord, amount in self._goldPots.items():
@@ -230,7 +242,7 @@ class Simulator(object):
 			#print(chr(27) + "[2J")
 			print("=" * 80)
 			print("Round %d:" % r)
-			print(self)
+			#print(self)
 		for p in self._players:
 			p.round_begin(r)
 
