@@ -3,6 +3,7 @@ from game_utils import TileStatus
 from game_utils import Map
 from player_base import Player
 import numpy as np
+from shortestpaths import AllShortestPaths
 
 
 class BasicBot(Player):
@@ -67,10 +68,11 @@ class BasicBot(Player):
                 return [self._as_direction(x,y) for x,y in zip([curpos]+path,path)]
 
         def move(self, status):
-                
+                ourMap = self.ourMap
+
                 #print("-" * 80)
-                print("Status for %s" % self.player_name)
-                print(status)
+                #print("Status for %s" % self.player_name)
+                #print(status)
 
                 curpos = (status.x,status.y)
 
@@ -79,40 +81,23 @@ class BasicBot(Player):
 
                 ## move towards gold pot
 
-                # find direction
-                print("current position", curpos)
-                print("gloc", gLoc)
-                xDir = (gLoc[0] - curpos[0])
-                yDir = (gLoc[1] - curpos[1])
-                print(xDir, "xDir")
-                print(yDir, "yDir")
+                numMoves = 2
 
-                numMoves = 1
-                
-                # moves have format (newXPosition, newYPosition)
-                # np.sign returns -1, 0 or 1 depending on the sign of the variable
-                newX = int(curpos[0] + np.sign(xDir))
-                newY = int(curpos[1] + np.sign(yDir))
-                move = (newX, newY)                
-                # avoid crashing into wall by not moving at all
-                if self.check_for_obstacles(status, newX, newY):
-                        numMoves = 0
+                paths = AllShortestPaths(gLoc,ourMap)
+                bestpath = paths.shortestPathFrom(curpos)
 
-                print(move, numMoves, "move & numMoves")
-                # create path of size 1 (basic bot only moves 1 step at a time)
-                path = [move]
+                bestpath = bestpath[1:]
+                bestpath.append( gLoc )
 
-                ## don't move if the pot is too far away
-                # calculate chebyshev distance between current position and gold pot 
-                # diagonal moves are allowed
-                distance = max(abs(xDir), abs(yDir))
+                distance=len(bestpath)
+
                 
                 #TODO: also check for total remaining rounds in the game
                 if numMoves>0 and distance/numMoves > status.goldPotRemainingRounds:
                         numMoves = 0
                         print("BasicBot: Closest Pot too far -> waiting mode")
 
-                return self._as_directions(curpos,path[:numMoves])
+                return self._as_directions(curpos,bestpath[:numMoves])
         
         def check_for_obstacles(self, status, x, y):
                 '''
