@@ -22,8 +22,7 @@ parser.add_argument('-p', '--podium', help="display the podium at the end of the
 args = parser.parse_args()
 
 robot_module_names = {"Test":"test-RobotRace",
-					"Beatme": "beatme-RobotRace",
-					"GoldDiggers": "GoldDiggers-RobotRace"} 
+					"Beatme": "beatme-RobotRace"} 
 robotmodules = { m:__import__(m) for m in robot_module_names.values() }
 
 if args.map is not None:

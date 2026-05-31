@@ -6,7 +6,9 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from PIL import Image
 from pathlib import Path
 
-_EMOJI_FONT = FontProperties(family="Segoe UI Emoji")
+# Tries Segoe UI Emoji first, then macOS Apple Color Emoji, then Linux/Android Noto Color Emoji
+emoji_families = ["Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "sans-serif"]
+_EMOJI_FONT = FontProperties(family=emoji_families)
 
 CONFETTI_COLORS = ["#ff595e", "#ffca3a", "#6a4c93", "#1982c4", "#8ac926", "#ff6b9d", "#ffffff"]
 MEDALS = ["🥇", "🥈", "🥉"]
