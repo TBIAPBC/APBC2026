@@ -77,28 +77,37 @@ class BasicBot(Player):
                 curpos = (status.x,status.y)
 
                 assert len(status.goldPots) > 0
-                gLoc = next(iter(status.goldPots))
+                goldLocation = next(iter(status.goldPots))
 
                 ## move towards gold pot
 
-                numMoves = 2
+                numMoves = 4
 
-                paths = AllShortestPaths(gLoc,ourMap)
+                paths = AllShortestPaths(goldLocation,ourMap)
                 bestpath = paths.shortestPathFrom(curpos)
-
+                bestpath = self.check_path(status, bestpath, numMoves)
                 bestpath = bestpath[1:]
-                bestpath.append( gLoc )
+                bestpath.append( goldLocation )
 
                 distance=len(bestpath)
-
+                #numMoves = distance
                 
                 #TODO: also check for total remaining rounds in the game
-                if numMoves>0 and distance/numMoves > status.goldPotRemainingRounds:
+                if numMoves>0 and distance/numMoves > min(status.goldPotRemainingRounds, 4):
                         numMoves = 0
                         print("BasicBot: Closest Pot too far -> waiting mode")
 
                 return self._as_directions(curpos,bestpath[:numMoves])
         
+        def check_path(self, status, path, numMoves):
+                i = 0
+                for tile in path:
+                        if self.check_for_obstacles(status, tile[0], tile[1]):
+                                print("collision detected", tile)
+                                path = path[:i-1]
+                        i+=1
+                return path
+
         def check_for_obstacles(self, status, x, y):
                 '''
                 checks a given tile for obstacles (walls & mines)
@@ -106,6 +115,12 @@ class BasicBot(Player):
                 Output: True -> obstacle on tile, False -> tile is clear, None if we cannot see the tile
                 '''
                 tileStatus = self.ourMap[x, y].status
+                # new version: if tile is empty we go, otherwise we don't. This should hopefully detect players too
+                if tileStatus != TileStatus.Empty:
+                        return True
+                return False
+                
+                # old version: check specifically for walls and mines
                 if  tileStatus == TileStatus.Wall or tileStatus == TileStatus.Mine:
                         print("Found an obstacle")
                         return True
