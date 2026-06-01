@@ -91,6 +91,13 @@ class BasicBot(Player):
 
                 distance=len(bestpath)
                 #numMoves = distance
+                #what didnt work:
+                """if distance <= 4 or status.goldPotRemainingRounds <= 5:
+                        numMoves = 4
+                else:
+                        numMoves = 1
+                if distance / 4 > min(status.goldPotRemainingRounds, 4):
+                        numMoves = 0"""
                 
                 #TODO: also check for total remaining rounds in the game
                 if numMoves>0 and distance/numMoves > min(status.goldPotRemainingRounds, 4):
@@ -104,7 +111,8 @@ class BasicBot(Player):
                 for tile in path:
                         if self.check_for_obstacles(status, tile[0], tile[1]):
                                 print("collision detected", tile)
-                                path = path[:i-1]
+                                path = path[:i]
+                                break 
                         i+=1
                 return path
 
@@ -121,10 +129,10 @@ class BasicBot(Player):
                 return False
                 
                 # old version: check specifically for walls and mines
-                if  tileStatus == TileStatus.Wall or tileStatus == TileStatus.Mine:
+"""                if  tileStatus == TileStatus.Wall or tileStatus == TileStatus.Mine:
                         print("Found an obstacle")
                         return True
                 elif tileStatus == TileStatus.Unknown: return None
-                return False
+                return False"""
 
 players = [ BasicBot()]
