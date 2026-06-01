@@ -140,9 +140,10 @@ class MyNonRandomPlayer(Player):
 
 
 # Switch on Erratic (the one with mines)
-players = [MyRandomPlayer()]
+# players = [MyNonRandomPlayer(),
+#            MyRandomPlayer()]
 
 
-#players = [MyNonRandomPlayer()]
+players = [MyNonRandomPlayer()]
 
 
