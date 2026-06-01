@@ -6,7 +6,7 @@
 # ffmpeg -i viz.gif -vf "select=eq(n\,0)" -q:v 3 firstframe.png
 
 import math
-
+import copy
 from game_utils import Direction as D
 from game_utils import TileStatus
 from game_utils import Map
@@ -69,8 +69,11 @@ class D3STROYER(Player):
 
         # print(status.others, file=open("status_others.txt", "a"))
 
+        # copy map that ours dont get corrupted
+        tempMap = copy.deepcopy(self.ourMap)
+
         ## determine next move d based on shortest path finding
-        paths = AllShortestPaths(gLoc,self.ourMap)
+        paths = AllShortestPaths(gLoc,tempMap)
 
         # predict paths other players will take
         for other_status in status.others:
@@ -79,10 +82,10 @@ class D3STROYER(Player):
                 other_path = paths.shortestPathFrom(other_pos)
                 # blacklist first n predicted path tiles
                 for tile in other_path[:3]:
-                    self.ourMap[tile].status = TileStatus.Wall
+                    tempMap[tile].status = TileStatus.Wall
 
         # recompute paths after Map update to avoid other players
-        paths = AllShortestPaths(gLoc,self.ourMap)
+        paths = AllShortestPaths(gLoc,tempMap)
 
         bestpath = paths.shortestPathFrom(curpos)
 
