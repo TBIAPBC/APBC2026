@@ -17,13 +17,12 @@ parser.add_argument('--framerate', help="specify framerate of the visualization"
 parser.add_argument('--map', help="specify map file", type=str,default=None)
 parser.add_argument('--mine_mode', help="specify what mines do. Options are wall, scramble and damage", type=str, default="wall")
 parser.add_argument('--allow_jumps', help="allow players to jump over walls by running into the same direction twice", action=argparse.BooleanOptionalAction)
-parser.add_argument('--pov', action='store_true', help='Create per-player POV gifs from internal memory maps')
+parser.add_argument('--pov',  help="filename prefix for pov vizualization. The corresponding player number will always be appended to this prefix", type=str)
 
 args = parser.parse_args()
 
-robot_module_names = {"Beatme": "beatme-RobotRace",
-     				"Dora":"explorer-RobotRace",
-         			"Erratic": "test-RobotRace"}
+robot_module_names = {"Test":"test-RobotRace",
+					"Beatme": "beatme-RobotRace"}
 
 robotmodules = { m:__import__(m) for m in robot_module_names.values() }
 
@@ -32,7 +31,7 @@ if args.map is not None:
 else:
    m = Map.makeRandom(30, 30, args.density)
 
-sim = Simulator(map=m, vizfile=args.viz, framerate=args.framerate, pov=args.pov)
+sim = Simulator(map=m, vizfile=args.viz, framerate=args.framerate, povfile=args.pov)
 
 for name,module_name in robot_module_names.items():
 	for p in robotmodules[module_name].players:
