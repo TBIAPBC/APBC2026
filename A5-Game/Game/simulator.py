@@ -14,10 +14,10 @@ from game_utils import Tile, TileStatus, TileObject
 from game_utils import Map, Status, GameParameters
 
 from illustrator import Illustrator
-from pov_illustrator import PovIllustrator
+from pov_addon import PovRecorder
 
 class Simulator(object):
-	def __init__(self, *, map, seed=None, vizfile=None, framerate, pov=False):
+	def __init__(self, *, map, seed=None, vizfile=None, framerate, povfile=None):
 		self.rng = random.Random()
 		if seed is None:
 			seed = random.randrange(sys.maxsize)
@@ -55,7 +55,7 @@ class Simulator(object):
 		# the object we give the player each time, updated from the internal data
 		self._pubStat = pubStat = []  
   
-		self.pov = pov
+		self.pov_recorder = PovRecorder(povfile)
 		self.illustrator = Illustrator(self.map, vizfile, framerate)
 
 	def _random_empty_spot(self):
@@ -81,7 +81,7 @@ class Simulator(object):
 
 		# duplicate the public status object in the player object
 		p.status = self._pubStat[-1]
-  	
+
 	def play(self, *, rounds, mine_mode, jumps_allowed=False):
 		rounds = int(rounds)
 		self.mine_mode = mine_mode
@@ -94,13 +94,11 @@ class Simulator(object):
 			self._pubStat[pId].params.jumps_ok=jumps_allowed
 
 			self._players[pId].reset(pId, len(self._players), self.map.width, self.map.height)
-		
+
 		self.illustrator._add_robots(self._players)
 		self.illustrator._add_nrounds(rounds)
-
-		# create dictionary to hold data player see about themselves.
-		self.pov_data = {}
-		self._init_pov_data()
+		if self.pov_recorder.prefix:
+			self.pov_recorder.init_players(self._players)
   
 		if self.printInitial:
 			print("Initial board:")
@@ -112,90 +110,22 @@ class Simulator(object):
 			self._handle_setting_mines(r)
 			self._handle_moving(r)
 			self._handle_healing(r)
-			self._record_pov_snapshots()
 			# TODO: something to do at the end of the round?
 			self.illustrator.append_goldpots(self._goldPots)
 			self.illustrator.append_robots(self._players)
 			self.illustrator.append_mines(getattr(self,'_mines',{}))
+			if self.pov_recorder.prefix:
+				self.pov_recorder.record_round(self._players, self._goldPots)
 			
 		print("=" * 80)
 		print("Final board:")
 		print(self)
 
 		if self.illustrator.vizfile:
-			self.illustrator._illustrate()
-
-		# for every player i that has an entry in our pov dictionary the data gets send to the PovIllustrator class and
-		# used in the functions there to create the visualization
-		if self.pov:
-			for i, data in self.pov_data.items():
-				if len(data['maps']) == 0:
-					continue
-
-				filename = f"pov_player_{i}.gif"
-				pov_illustrator = PovIllustrator(
-					data['maps'],
-					data['positions'],
-					data['name'],
-     				data['goldpots'],
-					data['others'],
-					data['health'],
-					data['gold'],
-					filename,
-					self.illustrator.FRAME_PER_SECOND
-				)
-				pov_illustrator.illustrate()
-				
-
-	def _init_pov_data(self):
-		'''
-		if pov flag is set it checks if every player has an internal map called "ourMap" and 
-		collects necesary data in dictionary. (players are numbered in the order they are listed in _players, 
-  		and that number is the dictionary key. each dictionary entry is another dictionary with every attribute as
-    	key and initialized with an empty list to hold values for every round.)
-     
-    	'''
-		if not self.pov:
-			return
-
-		for i, player in enumerate(self._players):
-			if hasattr(player, 'ourMap'):
-				self.pov_data[i] = {
-					'name': getattr(player, 'player_name', f'player_{i}'),
-					'maps': [],
-					'positions': [],
-					'others': [],
-					'goldpots': [],
-					'health': [],
-					'gold': []
-				}
-    
-	def _record_pov_snapshots(self):
-		'''
-  		gets called every round and fills the dictionary with the information the player has in the current round
-    	'''
-  
-		if not self.pov:
-			return
-
-		for i, player in enumerate(self._players):
-			if i not in self.pov_data:
-				continue
-
-			self.pov_data[i]['maps'].append(copy.deepcopy(player.ourMap))
-			self.pov_data[i]['positions'].append((player.status.x, player.status.y))
-			self.pov_data[i]['goldpots'].append(copy.deepcopy(self._goldPots))
-			self.pov_data[i]['health'].append(player.status.health)
-			self.pov_data[i]['gold'].append(player.status.gold)
+			self.illustrator._illustrate()			
+		if self.pov_recorder.prefix:
+			self.pov_recorder.render_all(self.illustrator.FRAME_PER_SECOND)
    
-			visible_others = []
-   
-			for other in player.status.others:
-				if other is not None:
-					visible_others.append((other.player, other.x, other.y))
-
-			self.pov_data[i]['others'].append(visible_others)
-   	
     # relocate gold pot(s)
 	def _empty_and_relocate_gold_pots(self):
 		for coord, amount in self._goldPots.items():
@@ -242,7 +172,7 @@ class Simulator(object):
 			#print(chr(27) + "[2J")
 			print("=" * 80)
 			print("Round %d:" % r)
-			#print(self)
+			print(self)
 		for p in self._players:
 			p.round_begin(r)
 

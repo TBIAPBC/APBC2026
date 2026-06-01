@@ -2,43 +2,85 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.colors import ListedColormap
 import numpy as np
+import copy
+import os
 
 from game_utils import TileStatus
 
+class PovRecorder():
+    def __init__(self, fileprefix):
+        self.pov_data = {}
+        self.prefix = fileprefix
+
+    def init_players(self, players):
+
+        for i, player in enumerate(players):
+            if hasattr(player, 'ourMap'):
+                self.pov_data[i] = {
+                    'name': getattr(player, 'player_name', f'player_{i}'),
+                    'maps': [],
+                    'positions': [],
+                    'others': [],
+                    'goldpots': [],
+                    'health': [],
+                    'gold': [],
+                }
+
+    def record_round(self, players, goldpots):
+
+        for i, player in enumerate(players):
+            if i not in self.pov_data:
+                continue
+            if not hasattr(player, 'ourMap'):
+                continue
+
+            self.pov_data[i]['maps'].append(copy.deepcopy(player.ourMap))
+            self.pov_data[i]['positions'].append((player.status.x, player.status.y))
+            self.pov_data[i]['goldpots'].append(copy.deepcopy(goldpots))
+            self.pov_data[i]['health'].append(player.status.health)
+            self.pov_data[i]['gold'].append(player.status.gold)
+
+            visible_others = []
+            for other in player.status.others:
+                if other is not None:
+                    visible_others.append((other.player, other.x, other.y))
+
+            self.pov_data[i]['others'].append(visible_others)
+            
+    def render_all(self, framerate):
+        
+        for i, data in self.pov_data.items():
+            if len(data['maps']) == 0:
+                continue
+            filename = os.path.join(f"{self.prefix}_{i}.gif")
+            PovIllustrator(data, filename, framerate).illustrate()
 
 class PovIllustrator:
     
-    def __init__(self, maps, positions, player_name, goldpots, others, health, gold, vizfile, framerate):
+    def __init__(self, pov_data, vizfile, framerate):
         """
         Initialize a PovIllustrator.
 
         Args:
-            maps: list of player-local `Map` snapshots (one per round).
-            positions: list of (x,y) player positions per round.
-            player_name: display name for the player (used in titles/filenames).
-            goldpots: list of dicts mapping gold coordinates to amounts per round.
-            others: list of lists of visible other players ((player,x,y) tuples) per round.
-            health: list of health values per round.
-            gold: list of gold amounts per round.
+            pov_data: dictionary containing all data bot has access to
             vizfile: output filename for the generated GIF.
             framerate: frames per second for the animation.
 
         Side effects:
             Prints a short message announcing the POV being illustrated.
         """
-        print(f'Illustrating POV for {player_name}')
-        self.maps = maps
-        self.positions = positions
-        self.player_name = player_name
+        self.player_name = pov_data['name']
+        self.maps = pov_data['maps']
+        self.positions = pov_data['positions']
+        self.goldpots_history = pov_data['goldpots']
+        self.others_history = pov_data['others']
+        self.health_history = pov_data['health']
+        self.gold_history = pov_data['gold']
         self.vizfile = vizfile
         self.frame_per_second = framerate
-        self.goldpots_history = goldpots
-        self.others_history = others
-        self.health_history = health
-        self.gold_history = gold
-        
-        self.width = maps[0].width
-        self.height = maps[0].height
+        self.width = self.maps[0].width
+        self.height = self.maps[0].height
+        print(f'Illustrating POV for {self.player_name}')
          
     def _map_to_array(self, m):
         """
@@ -111,7 +153,6 @@ class PovIllustrator:
 
         anim.save(self.vizfile, dpi=80, fps=self.frame_per_second)
         
-   
     def _illustrate_round(self, i):
         """
         Render a single frame (round `i`) of the POV animation.
