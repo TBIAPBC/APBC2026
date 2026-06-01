@@ -3,6 +3,7 @@ from game_utils import TileStatus
 from game_utils import Map
 from player_base import Player
 import numpy as np
+from shortestpaths import AllShortestPaths
 
 
 class BasicBot(Player):
@@ -67,53 +68,54 @@ class BasicBot(Player):
                 return [self._as_direction(x,y) for x,y in zip([curpos]+path,path)]
 
         def move(self, status):
-                
+                ourMap = self.ourMap
+
                 #print("-" * 80)
-                print("Status for %s" % self.player_name)
-                print(status)
+                #print("Status for %s" % self.player_name)
+                #print(status)
 
                 curpos = (status.x,status.y)
 
                 assert len(status.goldPots) > 0
-                gLoc = next(iter(status.goldPots))
+                goldLocation = next(iter(status.goldPots))
 
                 ## move towards gold pot
 
-                # find direction
-                print("current position", curpos)
-                print("gloc", gLoc)
-                xDir = (gLoc[0] - curpos[0])
-                yDir = (gLoc[1] - curpos[1])
-                print(xDir, "xDir")
-                print(yDir, "yDir")
+                numMoves = 4
 
-                numMoves = 1
-                
-                # moves have format (newXPosition, newYPosition)
-                # np.sign returns -1, 0 or 1 depending on the sign of the variable
-                newX = int(curpos[0] + np.sign(xDir))
-                newY = int(curpos[1] + np.sign(yDir))
-                move = (newX, newY)                
-                # avoid crashing into wall by not moving at all
-                if self.check_for_obstacles(status, newX, newY):
-                        numMoves = 0
+                paths = AllShortestPaths(goldLocation,ourMap)
+                bestpath = paths.shortestPathFrom(curpos)
+                bestpath = self.check_path(status, bestpath, numMoves)
+                bestpath = bestpath[1:]
+                bestpath.append( goldLocation )
 
-                print(move, numMoves, "move & numMoves")
-                # create path of size 1 (basic bot only moves 1 step at a time)
-                path = [move]
-
-                ## don't move if the pot is too far away
-                # calculate chebyshev distance between current position and gold pot 
-                # diagonal moves are allowed
-                distance = max(abs(xDir), abs(yDir))
+                distance=len(bestpath)
+                #numMoves = distance
+                #what didnt work:
+                """if distance <= 4 or status.goldPotRemainingRounds <= 5:
+                        numMoves = 4
+                else:
+                        numMoves = 1
+                if distance / 4 > min(status.goldPotRemainingRounds, 4):
+                        numMoves = 0"""
                 
                 #TODO: also check for total remaining rounds in the game
-                if numMoves>0 and distance/numMoves > status.goldPotRemainingRounds:
+                if numMoves>0 and distance/numMoves > min(status.goldPotRemainingRounds, 4):
                         numMoves = 0
                         print("BasicBot: Closest Pot too far -> waiting mode")
 
-                return self._as_directions(curpos,path[:numMoves])
+                return self._as_directions(curpos,bestpath[:numMoves])
         
+        def check_path(self, status, path, numMoves):
+                i = 0
+                for tile in path:
+                        if self.check_for_obstacles(status, tile[0], tile[1]):
+                                print("collision detected", tile)
+                                path = path[:i]
+                                break 
+                        i+=1
+                return path
+
         def check_for_obstacles(self, status, x, y):
                 '''
                 checks a given tile for obstacles (walls & mines)
@@ -121,10 +123,16 @@ class BasicBot(Player):
                 Output: True -> obstacle on tile, False -> tile is clear, None if we cannot see the tile
                 '''
                 tileStatus = self.ourMap[x, y].status
-                if  tileStatus == TileStatus.Wall or tileStatus == TileStatus.Mine:
+                # new version: if tile is empty we go, otherwise we don't. This should hopefully detect players too
+                if tileStatus != TileStatus.Empty:
+                        return True
+                return False
+                
+                # old version: check specifically for walls and mines
+"""                if  tileStatus == TileStatus.Wall or tileStatus == TileStatus.Mine:
                         print("Found an obstacle")
                         return True
                 elif tileStatus == TileStatus.Unknown: return None
-                return False
+                return False"""
 
 players = [ BasicBot()]
