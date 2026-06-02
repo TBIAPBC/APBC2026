@@ -2,6 +2,14 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import numpy as np
+import os
+
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def _asset(name):
+    return os.path.join(_HERE, name)
 
 
 class Illustrator:
@@ -32,6 +40,17 @@ class Illustrator:
         else:
             print(f"Unknown theme '{theme}', using default.")
             self.theme = self.THEMES['default']
+
+        for key in ('wall_image', 'mine_image', 'gold_image'):
+            path = self.theme.get(key)
+            if path is None:
+                continue
+            try:
+                plt.imread(path)
+            except (FileNotFoundError, OSError):
+                print(f"Could not load {path} for theme '{theme}', using default theme.")
+                self.theme = self.THEMES['default']
+                break
     
     # themes defining the appearance of the wall tiles 
     # wall_image: optional PNG that is added to each wall tile
@@ -49,38 +68,38 @@ class Illustrator:
         'desert': {
             'wall_color': "#F9F2D2",
             'wall_edge': "#BDA557",
-            'wall_image': 'illustrations/cactus.png',
+            'wall_image': _asset('illustrations/cactus.png'),
             'zoom': '0.024',
-            'mine_image': 'illustrations/expl.png',
-            'gold_image': 'illustrations/sand_gold.png',
+            'mine_image': _asset('illustrations/expl.png'),
+            'gold_image': _asset('illustrations/sand_gold.png'),
             'floor_color': "#F9E6D2"
         },
         'forest': {
             'wall_color': '#c8e6c9',
             'wall_edge': '#388e3c',
-            'wall_image': 'illustrations/evergreen_forest.png',
+            'wall_image': _asset('illustrations/evergreen_forest.png'),
             'zoom': '0.024',
-            'mine_image': 'illustrations/hole.png',
-            'gold_image': 'illustrations/grass_gold.png',
+            'mine_image': _asset('illustrations/hole.png'),
+            'gold_image': _asset('illustrations/grass_gold.png'),
             'floor_color': "#d8eed8"
         },
         'garden': {
             'wall_color': '#f0f4c3',
             'wall_edge': '#afb42b',
-            'wall_image': 'illustrations/garden_wall.png',
+            'wall_image': _asset('illustrations/garden_wall.png'),
             'zoom': '0.012',
-            'mine_image': 'illustrations/hole.png',
-            'gold_image': 'illustrations/grass_gold.png',
+            'mine_image': _asset('illustrations/hole.png'),
+            'gold_image': _asset('illustrations/grass_gold.png'),
             'floor_color': "#c0dabd"
             
         },
         'island': {
             'wall_color': "#F5DD90",
             'wall_edge': "#6B3A13",
-            'wall_image': 'illustrations/palm.png',
+            'wall_image': _asset('illustrations/palm.png'),
             'zoom': '0.024',
-            'mine_image': 'illustrations/expl.png',
-            'gold_image': 'illustrations/sand_gold.png',
+            'mine_image': _asset('illustrations/expl.png'),
+            'gold_image': _asset('illustrations/sand_gold.png'),
             'floor_color': "#9ed0e1"
         }
     }
