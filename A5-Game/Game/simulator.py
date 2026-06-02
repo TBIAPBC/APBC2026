@@ -14,9 +14,10 @@ from game_utils import Tile, TileStatus, TileObject
 from game_utils import Map, Status, GameParameters
 
 from illustrator import Illustrator
+from pov_addon import PovRecorder
 
 class Simulator(object):
-	def __init__(self, *, map, seed=None, vizfile=None, framerate, theme = 'default'):
+	def __init__(self, *, map, seed=None, vizfile=None, framerate, theme='default', povfile=None):
 		self.rng = random.Random()
 		if seed is None:
 			seed = random.randrange(sys.maxsize)
@@ -53,7 +54,7 @@ class Simulator(object):
 		self._status = status = []
 		# the object we give the player each time, updated from the internal data
 		self._pubStat = pubStat = []  
-
+		self.pov_recorder = PovRecorder(povfile)
 		self.illustrator = Illustrator(self.map, vizfile, framerate, theme)
 
 	def _random_empty_spot(self):
@@ -95,7 +96,9 @@ class Simulator(object):
 
 		self.illustrator._add_robots(self._players)
 		self.illustrator._add_nrounds(rounds)
-
+		if self.pov_recorder.prefix:
+			self.pov_recorder.init_players(self._players)
+  
 		if self.printInitial:
 			print("Initial board:")
 			print(self)
@@ -110,15 +113,19 @@ class Simulator(object):
 			self.illustrator.append_goldpots(self._goldPots)
 			self.illustrator.append_robots(self._players)
 			self.illustrator.append_mines(getattr(self,'_mines',{}))
-
+			if self.pov_recorder.prefix:
+				self.pov_recorder.record_round(self._players, self._goldPots)
+			
 		print("=" * 80)
 		print("Final board:")
 		print(self)
+
 		if self.illustrator.vizfile:
-			self.illustrator._illustrate()
-
-
-	# relocate gold pot(s)
+			self.illustrator._illustrate()			
+		if self.pov_recorder.prefix:
+			self.pov_recorder.render_all(self.illustrator.FRAME_PER_SECOND)
+   
+    # relocate gold pot(s)
 	def _empty_and_relocate_gold_pots(self):
 		for coord, amount in self._goldPots.items():
 			print("Gold pot at ({:>3}, {:>3}) with {} coints emtpied and relocated\n".
