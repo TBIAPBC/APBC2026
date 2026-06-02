@@ -12,7 +12,6 @@ class Illustrator:
         self.goldamount = []
         self.minepos = []
         self.minetime = []
-        self.robotsgold = []
 
 
         self.width = m.width
@@ -41,12 +40,12 @@ class Illustrator:
         self.n_rounds = rounds
 
     def append_robots(self, robots):
-        rpos, rhealth, rmoney, rgold = [], [], [], []
+        rpos, rhealth, rmoney = [], [], []
         for robot in robots:
             rpos.append([robot.status.x, robot.status.y])
             rhealth.append(robot.status.health)
             rmoney.append(robot.status.gold)
-            rgold.append(robot.status.gold)  # Store actual gold amount
+
 
 
         maxmoney = max(rmoney)
@@ -55,7 +54,7 @@ class Illustrator:
         self.robotspos.append(rpos)
         self.robotshealth.append(rhealth)
         self.robotsmoney.append(rmoney)
-        self.robotsgold.append(rgold)    # actual gold amounts
+
 
     def append_goldpots(self, goldpots):
         self.goldpos.append(list(goldpots.keys()))
@@ -147,13 +146,6 @@ class Illustrator:
         self.robot.set_sizes(self.robotsmoney[i])
         self.robot.set_array(np.array(self.robotshealth[i]))
 
-        # gold label
-        if not hasattr(self, 'gold_texts'):
-            self.gold_texts = [self.ax.text(0, 0, '', ha='left', va='center', fontsize=10, color='black', weight='bold', bbox=dict(boxstyle='round,pad=0.3', facecolor='gold', alpha=0.7)) for _ in range(self.n_robots)]
-        
-        for j, pos in enumerate(self.robotspos[i]):
-            self.gold_texts[j].set_position((pos[0] + 0.8, pos[1]))
-            self.gold_texts[j].set_text(str(int(self.robotsgold[i][j])))
 
         # mines
         self.mines.set_offsets(self.minepos[i])
