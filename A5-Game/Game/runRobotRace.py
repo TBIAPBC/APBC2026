@@ -24,7 +24,8 @@ parser.add_argument('--stats', help="generate statistics plots", action='store_t
 args = parser.parse_args()
 
 robot_module_names = {"Test":"test-RobotRace",
-					"Beatme": "beatme-RobotRace"}
+					"Beatme": "beatme-RobotRace",
+                    "D3STROYER": "D3STROYER_bot"}
 
 robotmodules = { m:__import__(m) for m in robot_module_names.values() }
 
