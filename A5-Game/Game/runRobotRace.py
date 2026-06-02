@@ -7,6 +7,7 @@ from game_utils import Direction as D, MoveStatus
 from game_utils import Tile, TileStatus, TileObject
 from game_utils import Map, Status
 from simulator import Simulator
+
 from player_base import Player
 from stats import plot_stats
 
@@ -14,7 +15,7 @@ parser = argparse.ArgumentParser(description="Robot Race Simulator 7000")
 parser.add_argument('--viz', help="filename for the visualization of the race", type=str)
 parser.add_argument('--number', help="number of rounds", type=int, default=1000)
 parser.add_argument('--density', help="map density", type=float, default=0.4)
-parser.add_argument('--framerate', help="specify framerate of the visualization", type=int, default=8)
+parser.add_argument('--framerate', help="specify framerate of the visualization", type=int, default=4)
 parser.add_argument('--map', help="specify map file", type=str,default=None)
 parser.add_argument('--mine_mode', help="specify what mines do. Options are wall, scramble and damage", type=str, default="wall")
 parser.add_argument('--allow_jumps', help="allow players to jump over walls by running into the same direction twice", action=argparse.BooleanOptionalAction)
@@ -24,8 +25,12 @@ parser.add_argument('--stats', help="generate statistics plots", action='store_t
 args = parser.parse_args()
 
 robot_module_names = {"Test":"test-RobotRace",
-					"Beatme": "beatme-RobotRace",
-                    "D3STROYER": "D3STROYER_bot"}
+					  "Beatme": "beatme-RobotRace",
+					  "GoldDiggers": "GoldDiggers-RobotRace",
+					  "XAE-12": "XAE-12-RobotRace",
+					  "D3STROYER_bot": "D3STROYER_bot",
+					  "Group4_player": "Group4_player",
+       } 
 
 robotmodules = { m:__import__(m) for m in robot_module_names.values() }
 
