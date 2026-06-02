@@ -6,19 +6,17 @@ import multiprocessing
 import threading
 import queue
 import time
-from shortestpaths import AllShortestPaths
+from .shortestpaths import AllShortestPaths
 
-from game_utils import nameFromPlayerId
-from game_utils import Direction, MoveStatus
-from game_utils import Tile, TileStatus, TileObject
-from game_utils import Map, Status, GameParameters
+from .game_utils import nameFromPlayerId
+from .game_utils import Direction, MoveStatus
+from .game_utils import Tile, TileStatus, TileObject
+from .game_utils import Map, Status, GameParameters
 
-from illustrator import Illustrator
-from pov_addon import PovRecorder
-from Additional_features.podium import draw_podium_from_game_info
+from .illustrator import Illustrator
 
 class Simulator(object):
-	def __init__(self, *, map, seed=None, vizfile=None, framerate, theme='default', povfile=None):
+	def __init__(self, *, map, seed=None, vizfile=None, framerate):
 		self.rng = random.Random()
 		if seed is None:
 			seed = random.randrange(sys.maxsize)
@@ -55,8 +53,8 @@ class Simulator(object):
 		self._status = status = []
 		# the object we give the player each time, updated from the internal data
 		self._pubStat = pubStat = []  
-		self.pov_recorder = PovRecorder(povfile)
-		self.illustrator = Illustrator(self.map, vizfile, framerate, theme)
+
+		self.illustrator = Illustrator(self.map, vizfile, framerate)
 
 	def _random_empty_spot(self):
 		while True:
@@ -82,14 +80,11 @@ class Simulator(object):
 		# duplicate the public status object in the player object
 		p.status = self._pubStat[-1]
 
-	def play(self, *, rounds, mine_mode, jumps_allowed=False, show_podium=False):
+	def play(self, *, rounds, mine_mode, jumps_allowed=False):
 		rounds = int(rounds)
 		self.mine_mode = mine_mode
 		self.jumps_allowed = jumps_allowed
     
-		# Initialize stats now that all players are added
-		self.stats = {pId: {'gold': [], 'health': [], 'moves': []} for pId in range(len(self._players))}
-
 		for pId in range(len(self._players)):
 			# to avoid breaking the player interface,
 			# set number of rounds in the players status objects
@@ -100,9 +95,7 @@ class Simulator(object):
 
 		self.illustrator._add_robots(self._players)
 		self.illustrator._add_nrounds(rounds)
-		if self.pov_recorder.prefix:
-			self.pov_recorder.init_players(self._players)
-  
+
 		if self.printInitial:
 			print("Initial board:")
 			print(self)
@@ -117,19 +110,13 @@ class Simulator(object):
 			self.illustrator.append_goldpots(self._goldPots)
 			self.illustrator.append_robots(self._players)
 			self.illustrator.append_mines(getattr(self,'_mines',{}))
-			if self.pov_recorder.prefix:
-				self.pov_recorder.record_round(self._players, self._goldPots)
-			
+
 		print("=" * 80)
 		print("Final board:")
 		print(self)
-
 		if self.illustrator.vizfile:
 			self.illustrator._illustrate()
-		if self.pov_recorder.prefix:
-			self.pov_recorder.render_all(self.illustrator.FRAME_PER_SECOND)
-		if show_podium:
-			draw_podium_from_game_info(self)
+
 
 	# relocate gold pot(s)
 	def _empty_and_relocate_gold_pots(self):
@@ -534,14 +521,8 @@ class Simulator(object):
 					self._trigger_mine(x, y, pId)
 					self.map[x, y].status = TileStatus.Empty
 					self._mines.pop((x, y))
-					print(f"Player {pId} triggered mine at ({x}, {y})")	
-
-		# collect statistics for this round
-		for pId in range(len(self._players)):
-			self.stats[pId]['gold'].append(self._status[pId].gold)
-			self.stats[pId]['health'].append(self._status[pId].health)
-			self.stats[pId]['moves'].append(sum(1 for m in moveStatusPerPlayer[pId] if m == MoveStatus.Done))				
-
+					print(f"Player {pId} triggered mine at ({x}, {y})")					
+	
 	def _trigger_mine(self, x, y, pId):
 		if self.mine_mode == "damage":
 			MINE_DAMAGE = 30
