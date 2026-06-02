@@ -15,6 +15,7 @@ from game_utils import Map, Status, GameParameters
 
 from illustrator import Illustrator
 from pov_addon import PovRecorder
+from Additional_features.podium import draw_podium_from_game_info
 
 class Simulator(object):
 	def __init__(self, *, map, seed=None, vizfile=None, framerate, theme='default', povfile=None):
@@ -81,7 +82,7 @@ class Simulator(object):
 		# duplicate the public status object in the player object
 		p.status = self._pubStat[-1]
 
-	def play(self, *, rounds, mine_mode, jumps_allowed=False):
+	def play(self, *, rounds, mine_mode, jumps_allowed=False, show_podium=False):
 		rounds = int(rounds)
 		self.mine_mode = mine_mode
 		self.jumps_allowed = jumps_allowed
@@ -121,11 +122,13 @@ class Simulator(object):
 		print(self)
 
 		if self.illustrator.vizfile:
-			self.illustrator._illustrate()			
+			self.illustrator._illustrate()
 		if self.pov_recorder.prefix:
 			self.pov_recorder.render_all(self.illustrator.FRAME_PER_SECOND)
-   
-    # relocate gold pot(s)
+		if show_podium:
+			draw_podium_from_game_info(self)
+
+	# relocate gold pot(s)
 	def _empty_and_relocate_gold_pots(self):
 		for coord, amount in self._goldPots.items():
 			print("Gold pot at ({:>3}, {:>3}) with {} coints emtpied and relocated\n".

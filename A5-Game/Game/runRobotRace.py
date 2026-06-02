@@ -19,17 +19,17 @@ parser.add_argument('--mine_mode', help="specify what mines do. Options are wall
 parser.add_argument('--allow_jumps', help="allow players to jump over walls by running into the same direction twice", action=argparse.BooleanOptionalAction)
 parser.add_argument('--theme', type=str, default='default',choices=['default', 'desert', 'forest', 'garden', 'island'])
 parser.add_argument('--pov',  help="filename prefix for pov vizualization. The corresponding player number will always be appended to this prefix", type=str)
+parser.add_argument('-p', '--podium', help="display the podium at the end of the game", action=argparse.BooleanOptionalAction)
 
 args = parser.parse_args()
 
 robot_module_names = {
     "Test": "test-RobotRace",
     "Beatme": "beatme-RobotRace",
-    "version 2": "v2",
-    "version 3": "v3",
-    "Scout": "scout"
+    "Explorer": "explorer-RobotRace",
+    "GoldDiggers": "GoldDiggers-RobotRace",
+    "Adlhartm": "adlhartm-RobotRace",
 }
-
 robotmodules = { m:__import__(m) for m in robot_module_names.values() }
 
 if args.map is not None:
@@ -50,4 +50,4 @@ for name,module_name in robot_module_names.items():
 		p.player_modname = name
 		sim.add_player(p)
 
-sim.play(rounds=args.number, jumps_allowed=args.allow_jumps, mine_mode=args.mine_mode.lower())
+sim.play(rounds=args.number, jumps_allowed=args.allow_jumps, mine_mode=args.mine_mode.lower(), show_podium=args.podium)
