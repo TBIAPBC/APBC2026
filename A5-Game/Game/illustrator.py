@@ -12,6 +12,13 @@ def _asset(name):
     return os.path.join(_HERE, name)
 
 
+def _mp4_path(path):
+    root, ext = os.path.splitext(path)
+    if ext.lower() != '.mp4':
+        return root + '.mp4'
+    return path
+
+
 class Illustrator:
     def __init__(self, m, vizfile, framerate, theme='default'):
         self.robotspos = []
@@ -32,7 +39,7 @@ class Illustrator:
         self.find_walls(m)
 
         self.FRAME_PER_SECOND = framerate
-        self.vizfile = vizfile
+        self.vizfile = _mp4_path(vizfile) if vizfile else vizfile
 
          # set theme, if no theme is given, use default
         if theme in self.THEMES:
@@ -178,10 +185,13 @@ class Illustrator:
         self.init_goldpots()
         self.init_mines()
 
-        gif = FuncAnimation(fig, self.illustrate_round,
-                            self.n_rounds)
-        gif.save(self.vizfile, 
-                 dpi=200, fps=self.FRAME_PER_SECOND) # higher dpi 
+        animation = FuncAnimation(fig, self.illustrate_round, self.n_rounds)
+        animation.save(
+            self.vizfile,
+            writer='ffmpeg',
+            dpi=200,
+            fps=self.FRAME_PER_SECOND,
+        )
 
     def init_plot(self):
         self.ax.tick_params(
