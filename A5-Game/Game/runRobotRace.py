@@ -8,6 +8,7 @@ from game_utils import Tile, TileStatus, TileObject
 from game_utils import Map, Status
 from simulator import Simulator
 from player_base import Player
+from stats import plot_stats
 
 parser = argparse.ArgumentParser(description="Robot Race Simulator 7000")
 parser.add_argument('--viz', help="filename for the visualization of the race", type=str)
@@ -17,13 +18,20 @@ parser.add_argument('--framerate', help="specify framerate of the visualization"
 parser.add_argument('--map', help="specify map file", type=str,default=None)
 parser.add_argument('--mine_mode', help="specify what mines do. Options are wall, scramble and damage", type=str, default="wall")
 parser.add_argument('--allow_jumps', help="allow players to jump over walls by running into the same direction twice", action=argparse.BooleanOptionalAction)
+parser.add_argument('--theme', type=str, default='default',choices=['default', 'desert', 'forest', 'garden', 'island'])
 parser.add_argument('--pov',  help="filename prefix for pov vizualization. The corresponding player number will always be appended to this prefix", type=str)
+parser.add_argument('-p', '--podium', help="display the podium at the end of the game", action=argparse.BooleanOptionalAction)
+parser.add_argument('--stats', help="generate statistics plots", action='store_true')
 
 args = parser.parse_args()
 
-robot_module_names = {"Test":"test-RobotRace",
-					"Beatme": "beatme-RobotRace"}
-
+robot_module_names = {
+    "Test": "test-RobotRace",
+    "Beatme": "beatme-RobotRace",
+    "Explorer": "explorer-RobotRace",
+    "GoldDiggers": "GoldDiggers-RobotRace",
+    "Adlhartm": "adlhartm-RobotRace",
+}
 robotmodules = { m:__import__(m) for m in robot_module_names.values() }
 
 if args.map is not None:
@@ -31,11 +39,20 @@ if args.map is not None:
 else:
    m = Map.makeRandom(30, 30, args.density)
 
-sim = Simulator(map=m, vizfile=args.viz, framerate=args.framerate, povfile=args.pov)
+sim = Simulator(
+    map=m,
+    vizfile=args.viz,
+    framerate=args.framerate,
+    theme=args.theme,
+    povfile=args.pov,
+)
 
 for name,module_name in robot_module_names.items():
 	for p in robotmodules[module_name].players:
 		p.player_modname = name
 		sim.add_player(p)
 
-sim.play(rounds=args.number, jumps_allowed=args.allow_jumps, mine_mode=args.mine_mode.lower())
+sim.play(rounds=args.number, jumps_allowed=args.allow_jumps, mine_mode=args.mine_mode.lower(), show_podium=args.podium)
+
+if args.stats:
+	plot_stats(sim, 'stats.png')

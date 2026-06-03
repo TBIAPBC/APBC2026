@@ -7,6 +7,13 @@ import os
 
 from game_utils import TileStatus
 
+
+def _mp4_path(path):
+    root, ext = os.path.splitext(path)
+    if ext.lower() != '.mp4':
+        return root + '.mp4'
+    return path
+
 class PovRecorder():
     def __init__(self, fileprefix):
         self.pov_data = {}
@@ -54,7 +61,7 @@ class PovRecorder():
         for i, data in self.pov_data.items():
             if len(data['maps']) == 0:
                 continue
-            filename = os.path.join(f"{self.prefix}_{i}.gif")
+            filename = os.path.join(f"{self.prefix}_{i}.mp4")
             PovIllustrator(data, filename, framerate).illustrate()
 
 class PovIllustrator:
@@ -157,9 +164,13 @@ class PovIllustrator:
         #player colored Diamond on top of the title
         self.ax.scatter(0.49, 1.07,transform=self.ax.transAxes, marker='D', alpha = 0.5, s=100, color=self.color, edgecolors='k', clip_on=False)
 
-        anim = FuncAnimation(fig,self._illustrate_round,frames=len(self.maps),)
-
-        anim.save(self.vizfile, dpi=80, fps=self.frame_per_second)
+        anim = FuncAnimation(fig, self._illustrate_round, frames=len(self.maps))
+        anim.save(
+            self.vizfile,
+            writer='ffmpeg',
+            dpi=80,
+            fps=self.frame_per_second,
+        )
         
     def _illustrate_round(self, i):
         """

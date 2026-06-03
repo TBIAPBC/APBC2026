@@ -1,0 +1,6 @@
+A5-Game/Game/__pycache__/*
+A5-Game/Game/Additional_features/__pycache__/*
+A5-Game/Game/*.png
+A5-Game/Game/*.gif
+.vscode/launch.json
+*.mp4
