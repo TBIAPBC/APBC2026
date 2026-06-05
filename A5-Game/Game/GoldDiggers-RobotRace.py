@@ -76,11 +76,13 @@ class BasicBot(Player):
                 goldLocation = next(iter(status.goldPots))
 
 
+                print(status)
+                print("status"*20)
                 ## move towards gold pot
                 numMoves = 4
                 
-                paths = AllShortestPaths(goldLocation,ourMap)
-                bestpath = paths.shortestPathFrom(curpos)
+                paths_to_middle = AllShortestPaths(goldLocation,ourMap)
+                bestpath = paths_to_middle.shortestPathFrom(curpos)
                 bestpath = self.check_path(status, bestpath, numMoves)
                 bestpath = bestpath[1:]
                 bestpath.append( goldLocation )
@@ -92,8 +94,15 @@ class BasicBot(Player):
                 #numMoves = distance
                 #TODO: also check for total remaining rounds in the game
                 if numMoves>0 and distance/numMoves > min(status.goldPotRemainingRounds, max_rounds_to_pot):
-                        numMoves = 0
-                        print("BasicBot: Closest Pot too far -> waiting mode")
+                        # waiting mode
+                        # numMoves = 0
+                        # repositioning mode: move towards middle of map to increase likelihood of finding next gold pot
+                        numMoves = 1
+                        middle_of_map = (self.ourMap.width//2, self.ourMap.height//2)
+                        paths_to_middle = AllShortestPaths(middle_of_map,self.ourMap)
+                        bestpath = paths_to_middle.shortestPathFrom(curpos)
+                        bestpath = bestpath[1:]
+                        bestpath.append( middle_of_map )
 
                 return self._as_directions(curpos,bestpath[:numMoves])
         
