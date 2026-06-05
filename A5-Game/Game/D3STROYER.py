@@ -7,6 +7,7 @@
 
 import math
 import copy
+from collections import deque
 from game_utils import Direction as D
 from game_utils import TileStatus
 from game_utils import Map
@@ -16,36 +17,13 @@ from shortestpaths import AllShortestPaths
 
 class D3STROYER(Player):
 
-    # ------------ Tuning parameters --------------------
-    # If expected_profit < MIN_POFIT -> skip pot
-    MIN_PROFIT = 20
-
-    # Rounds of margin required beyond the bare minimum travel time
-    # E.g. 1.5x the distance in remaining rounds
-    ROUNDS_SAFETY_MARGIN = 1.5
-
-    # If enemy is much closer, skip pot
-    # 0.85 = skip if enemy needs ≤ 85% of our steps
-    OPPONENT_DISTANCE = 0.85
-
-    # Blacklist tiles on each enemy path, to avoid crashes
-    BLACKLIST_DEPTH = 2
-
-    # Keep gold reserve
-    GOLD_REVERSE = 10   
-    
-    # ------------------------------------------------
-
     def reset(self, player_id, max_players, width, height):
         self.player_name = "D3STROYER"
         self.ourMap = Map(width, height)
 
     def round_begin(self, r):
         pass
-
-    # ------------------------------------------------
     
-    # helpers
     def _as_direction(self,curpos,nextpos):
             for d in D:
                     diff = d.as_xy()
@@ -62,160 +40,211 @@ class D3STROYER(Player):
                 if status.map[x,y].status != TileStatus.Unknown:
                     self.ourMap[x,y].status = status.map[x,y].status
 
-    @staticmethod
-    def _movement_cost(distance):
-        return distance * (distance + 1) // 2
+    def _found_gold(self, status, gx, gy):
+        # returns True if gold is in visible map
+        tile = status.map[gx, gy]
+        return tile.status != TileStatus.Unknown 
     
     def _affordable_moves(self, gold):
         """
         How many moves can we afford?
         cost(k) = 1+2+...+k = k*(k+1)/2  ≤ gold
+        Solve for largest k where k*(k+1)/2 ≤ gold.
         """
         k = 0
-        while (k+1) * (k+2) // 2 <= gold - self.GOLD_REVERSE:
+        while (k+1) * (k+2) // 2 <= gold:
             k += 1
-        return k
+        return k 
     
-    def _enemy_min_distance(self, status, paths):
-        """
-         Returns shortest path visible enemy has to Gold.
-         Return None if no enemies visible.
-        """
-        min_dist = None
-        for other in status.others:
-             if other is not None:
-                  other_path = paths.shortestPathFrom((other.x, other.y))
-                  # start -> length -1 = steps
-                  dist = len(other_path)-1
-                  if dist >= 0 and (min_dist is None or dist < min_dist):
-                       min_dist = dist
-        return min_dist
+    @staticmethod
+    def _movement_cost(distance):
+        return distance * (distance + 1) // 2
     
-    def _pot_is_viable(self, status, distance, pot_value, enemy_min_dist):
-        """
-        Chase pot or not ? 
-        """
-        cost = self._movement_cost(distance)
-        spendable_gold = status.gold - self.GOLD_REVERSE
-
-        # 1. Can we afford walk at all?
-        if cost > spendable_gold:
-            return False, "cant_afford"
-        
-        # 2. If pot worth it?
-        profit = pot_value - cost
-        if profit < self.MIN_PROFIT:
-            return False, "low_profit"
-        
-        # 3. Enough rounds left?
-        rounds_needed = distance * self.ROUNDS_SAFETY_MARGIN
-        if rounds_needed > status.goldPotRemainingRounds:
-            return False, "too_little_rounds"
-         
-        #4. Is enemy faste?
-        if enemy_min_dist is not None:
-            if enemy_min_dist <= distance * self.OPPONENT_DISTANCE:
-                return False, "opponent_faster"
-        
-        return True, "go"
     
-    def _choose_num_moves(self, status, distance, pot_value, viable):
-        """
-        How many moves this turn? 
-
-        strategy:
-            - Not viable -> 0 (stand still)
-            - Faster AND pot is big enough -> sprint all the way
-            - Otherwise -> 2-3 moves 
-        """
-
-        if not viable:
-             return 0
+    def _map_bounds(self, pos):
+        x, y = pos
         
-        spendable = status.gold - self.GOLD_REVERSE
-        budget_moves = self._affordable_moves(status.gold)
+        if x < 0 or x >= self.ourMap.width:
+            return False
 
-        full_cost = self._movement_cost(distance)
+        if y < 0 or y >= self.ourMap.height:
+            return False
 
-        # sprint if we are faster and pot is profitable
-        sprint_profit = pot_value - full_cost
-        if full_cost <= spendable and sprint_profit >= self.MIN_PROFIT * 2:
-             return min(distance, budget_moves)
-        
-        # move 2-3 steps depending on budget -> durch expoloration logik ersetzen
-        default_moves = 3 if budget_moves >= 3 else budget_moves
-        return max(0, default_moves)
+        return True
+    
+    def _adj_cells(self, pos):
 
+        x, y = pos
 
-    def _found_gold(self, status, gx, gy):
-        # returns True if gold is in visible map
-        tile = status.map[gx, gy]
-        return tile.status != TileStatus.Unknown 
+        for d in D:
+            dx, dy = d.as_xy()
+            nxt = (x + dx, y + dy)
+            if self._map_bounds(nxt):
+                yield nxt
+    
+    def _is_frontier(self, pos):
 
-    # Main move logic
+        if self.ourMap[pos].status != TileStatus.Empty:
+            return False
+
+        for cell in self._adj_cells(pos):
+
+            if self.ourMap[cell].status == TileStatus.Unknown:
+                return True
+
+        return False
+    
+    def _shortest_path_to_frontier(self, start):
+
+        queue = deque([start])
+        visited = {start}
+        prev = {}
+
+        while queue:
+            cur = queue.popleft()
+
+            if cur != start and self._is_frontier(cur):
+                path = [cur]
+                while cur in prev:
+                    cur = prev[cur]
+                    path.append(cur)
+                path.reverse()
+
+                return path
+
+            for nxt in self._adj_cells(cur):
+                if nxt in visited:
+                    continue
+
+                if self.ourMap[nxt].status != TileStatus.Empty:
+                    continue
+
+                visited.add(nxt)
+                prev[nxt] = cur
+                queue.append(nxt)
+
+        return []
+    
+
+    def _best_gold_target(self, status, curpos):
+        best_score = -999999
+        best_gold = None
+        best_path = None
+
+        for gLoc, gold_value in status.goldPots.items():
+
+            tempMap = copy.deepcopy(self.ourMap)
+            paths = AllShortestPaths(gLoc, tempMap)
+
+            for other_status in status.others:
+
+                if other_status is None:
+                    continue
+
+                other_pos = (other_status.x,other_status.y)
+                other_path = paths.shortestPathFrom(other_pos)
+
+                if other_path:
+                    for tile in other_path[:2]:
+                        tempMap[tile].status = TileStatus.Wall
+                
+            paths = AllShortestPaths(gLoc, tempMap)
+            path = paths.shortestPathFrom(curpos)
+
+            if not path:
+                continue
+
+            path = path[1:]
+            path.append(gLoc)
+
+            distance = len(path)
+
+            score = gold_value - 2 * distance
+            
+            for other_status in status.others:
+                if other_status is None:
+                    continue
+
+                enemy_pos = (other_status.x,other_status.y)
+
+                enemy_path = paths.shortestPathFrom(enemy_pos)
+
+                if enemy_path:
+                    enemy_distance = len(enemy_path)
+                    if enemy_distance < distance:
+                        score -= 25
+
+            if score > best_score:
+                best_score = score
+                best_gold = gLoc
+                best_path = path
+            
+        return best_gold, best_path
+
     def move(self, status):
         self._update_map(status)
 
         curpos = (status.x,status.y)
 
         assert len(status.goldPots) > 0
-        # possible edge case: multiple gold pots exist
-        #gLoc = next(iter(status.goldPots)) # only one gold pot
-        gLoc = max(status.goldPots, key=lambda loc: status.goldPots[loc]) # more than one gold pot
+        gLoc, bestpath = self._best_gold_target(status, curpos)
+
+        if bestpath is None:
+
+            frontier_path = self._shortest_path_to_frontier(curpos)
+
+            if len(frontier_path) > 1:
+                return self._as_directions(curpos,frontier_path[1:3])
+
+            return []
+
+        distance = len(bestpath)
+
+        if distance > status.goldPotRemainingRounds:
+            frontier_path = self._shortest_path_to_frontier(curpos)
+            if len(frontier_path) > 1:
+                return self._as_directions(curpos, frontier_path[1:2])
+            return []
+
         pot_value = status.goldPots[gLoc]
 
-        # 1. compute path on temporary map 
-        # copy map that ours dont get corrupted
-        tempMap = copy.deepcopy(self.ourMap)
+        if pot_value < distance:
 
-        ## determine next move d based on shortest path finding
-        paths_raw = AllShortestPaths(gLoc,tempMap)
+            frontier_path = self._shortest_path_to_frontier(curpos)
 
-        # opponent min distance
-        opponent_min_dist = self._enemy_min_distance(status, paths_raw)
+            if len(frontier_path) > 1:
 
-        # 2. blacklisting enemys paths
-        for other in status.others:
-            if other is not None:
-                other_pos = other.x, other.y
-                other_path = paths_raw.shortestPathFrom(other_pos)
-                # blacklist first n predicted path tiles
-                for tile in other_path[1: self.BLACKLIST_DEPTH + 1]:
-                    tempMap[tile].status = TileStatus.Wall
+                return self._as_directions(curpos,frontier_path[1:3])
 
-        # recompute paths after Map update to avoid other players
-        paths = AllShortestPaths(gLoc,tempMap)
-        bestpath = paths.shortestPathFrom(curpos)
+            return []
         
-        # 3. extract distance
-        # distance = len(path) -1 , and moves slice in path[1:]
-        if len(bestpath) < 2:
-            return [] # unreachable
+        max_affordable = self._affordable_moves(status.gold)
+
+        if pot_value > 50:
+
+            numMoves = min(5,distance,max_affordable)
+
+        elif pot_value > 20:
+
+            numMoves = min(3,distance,max_affordable)
+
+        else:
+            numMoves = min(2,distance,max_affordable)
+
+        move_cost = D3STROYER._movement_cost(numMoves)
+
+        if move_cost >= pot_value:
+            numMoves = 0
+        # print(status.others, file=open("status_others.txt", "a"))
         
-        move_path = bestpath[1:] # path without start position
-        distance = len(move_path) # num of steps to goal
-
-        # 4. viability + numMoves
-        viable, reason = self._pot_is_viable(status, distance, pot_value, opponent_min_dist)
-        numMoves = self._choose_num_moves(status, distance, pot_value, viable)
-
-        # 5. reposition, if skipping the pot
         if numMoves == 0:
-            # move towards center
-            cx, cy = self.ourMap.width // 2, self.ourMap.height //2
-            center = (cx,cy)
-            if curpos != center:
-                center_map = copy.deepcopy(self.ourMap)
-                center_paths = AllShortestPaths(center, center_map)
-                center_path = center_paths.shortestPathFrom(curpos)
-                if len(center_path) >= 2:
-                    reposition_moves = min(2, self._affordable_moves(status.gold))
-
-                    return self._as_directions(curpos, center_path[1:1 + reposition_moves])
-                return[]
+            frontier_path = self._shortest_path_to_frontier(curpos)
             
-        return self._as_directions(curpos, move_path[:numMoves])
-    
+            if len(frontier_path) > 1:
+                return self._as_directions(curpos,frontier_path[1:2])
+            return []
+
+        return self._as_directions(curpos,bestpath[:numMoves])
 
     def set_mines(self, status):
         """
