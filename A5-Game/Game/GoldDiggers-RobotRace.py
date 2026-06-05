@@ -70,37 +70,28 @@ class BasicBot(Player):
         def move(self, status):
                 ourMap = self.ourMap
 
-                #print("-" * 80)
-                #print("Status for %s" % self.player_name)
-                #print(status)
-
                 curpos = (status.x,status.y)
 
                 assert len(status.goldPots) > 0
                 goldLocation = next(iter(status.goldPots))
 
+
                 ## move towards gold pot
-
                 numMoves = 4
-
+                
                 paths = AllShortestPaths(goldLocation,ourMap)
                 bestpath = paths.shortestPathFrom(curpos)
                 bestpath = self.check_path(status, bestpath, numMoves)
                 bestpath = bestpath[1:]
                 bestpath.append( goldLocation )
 
+                low_gold_mode = True if status.gold < 40 else False
+                max_rounds_to_pot = 4 if not low_gold_mode else 1
+
                 distance=len(bestpath)
                 #numMoves = distance
-                #what didnt work:
-                """if distance <= 4 or status.goldPotRemainingRounds <= 5:
-                        numMoves = 4
-                else:
-                        numMoves = 1
-                if distance / 4 > min(status.goldPotRemainingRounds, 4):
-                        numMoves = 0"""
-                
                 #TODO: also check for total remaining rounds in the game
-                if numMoves>0 and distance/numMoves > min(status.goldPotRemainingRounds, 4):
+                if numMoves>0 and distance/numMoves > min(status.goldPotRemainingRounds, max_rounds_to_pot):
                         numMoves = 0
                         print("BasicBot: Closest Pot too far -> waiting mode")
 
