@@ -88,7 +88,20 @@ class Simulator(object):
 		self.jumps_allowed = jumps_allowed
     
 		# Initialize stats now that all players are added
-		self.stats = {pId: {'gold': [], 'health': [], 'moves': []} for pId in range(len(self._players))}
+		self.stats = {
+			pId: {
+				'gold': [],
+				'health': [],
+				'moves': [],
+				'wall_crashes': [],
+				'player_crashes': [],
+				'mines_set': [],
+				'mines_triggered': [],
+				'out_of_gold': [],
+				'out_of_health': [],
+			}
+			for pId in range(len(self._players))
+		}
 
 		for pId in range(len(self._players)):
 			# to avoid breaking the player interface,
@@ -103,6 +116,9 @@ class Simulator(object):
 		if self.pov_recorder.prefix:
 			self.pov_recorder.init_players(self._players)
   
+		# track cumulative number of gold pots collected per player
+		self.pots_collected = [0 for _ in range(len(self._players))]
+
 		if self.printInitial:
 			print("Initial board:")
 			print(self)
@@ -113,9 +129,20 @@ class Simulator(object):
 			self._handle_setting_mines(r)
 			self._handle_moving(r)
 			self._handle_healing(r)
+			for pId in range(len(self._players)):
+				round_stats = self._round_stats[pId]
+				self.stats[pId]['gold'].append(self._status[pId].gold)
+				self.stats[pId]['health'].append(self._status[pId].health)
+				self.stats[pId]['moves'].append(round_stats['moves'])
+				self.stats[pId]['wall_crashes'].append(round_stats['wall_crashes'])
+				self.stats[pId]['player_crashes'].append(round_stats['player_crashes'])
+				self.stats[pId]['mines_set'].append(round_stats['mines_set'])
+				self.stats[pId]['mines_triggered'].append(round_stats['mines_triggered'])
+				self.stats[pId]['out_of_gold'].append(round_stats['out_of_gold'])
+				self.stats[pId]['out_of_health'].append(round_stats['out_of_health'])
 			# TODO: something to do at the end of the round?
 			self.illustrator.append_goldpots(self._goldPots)
-			self.illustrator.append_robots(self._players)
+			self.illustrator.append_robots(self._players, self.pots_collected)
 			self.illustrator.append_mines(getattr(self,'_mines',{}))
 			if self.pov_recorder.prefix:
 				self.pov_recorder.record_round(self._players, self._goldPots)
@@ -171,6 +198,18 @@ class Simulator(object):
 
 		# reset the task counter
 		self._tasksThisRound = [0 for pId in self._players]
+		self._round_stats = {
+			pId: {
+				'moves': 0,
+				'wall_crashes': 0,
+				'player_crashes': 0,
+				'mines_set': 0,
+				'mines_triggered': 0,
+				'out_of_gold': 0,
+				'out_of_health': 0,
+			}
+			for pId in range(len(self._players))
+		}
 
 		if self.printRoundBegin:
 			# https://stackoverflow.com/questions/2084508/clear-terminal-in-python
@@ -252,6 +291,7 @@ class Simulator(object):
 					if not self.map[xy].is_blocked() and self.map[xy].obj is None:
 						self._mines[xy] = r + self.params.mineExpiryTime
 						self.map[xy] = Tile(TileStatus.Mine)
+						self._round_stats[pId]['mines_set'] += 1
 						print("Player %s sets mine at %s (distance %d; expires in round %d)."
 							% (str(pId), str(xy), d, self._mines[xy]) )
 				else:
@@ -454,6 +494,14 @@ class Simulator(object):
 					self._decrease_health(pId,
 						self.params.healthPerPlayerCrash
 						+ random.randint(0,self.params.healthPerPlayerCrashRandom))
+				if ms == MoveStatus.CrashWall:
+					self._round_stats[pId]['wall_crashes'] += 1
+				elif ms == MoveStatus.CrashPlayer:
+					self._round_stats[pId]['player_crashes'] += 1
+				elif ms == MoveStatus.OutOfGold:
+					self._round_stats[pId]['out_of_gold'] += 1
+				elif ms == MoveStatus.OutOfHealth:
+					self._round_stats[pId]['out_of_health'] += 1
 
 			# print unsuccessful moves
 			if self._debugMoves:
@@ -514,6 +562,8 @@ class Simulator(object):
 					if self.printEvents:
 						print("Event:", nameFromPlayerId(pId), "took a pot of %d gold." % amount)
 					self._status[pId].gold += amount
+					# record that this player collected a gold pot
+					self.pots_collected[pId] += 1
 					del self._goldPots[moves[pId][1]]
 					numGoldPotsTaken += 1
 				self.map[moves[pId][1]].obj = TileObject.makePlayer(pId)
@@ -534,13 +584,11 @@ class Simulator(object):
 					self._trigger_mine(x, y, pId)
 					self.map[x, y].status = TileStatus.Empty
 					self._mines.pop((x, y))
+					self._round_stats[pId]['mines_triggered'] += 1
 					print(f"Player {pId} triggered mine at ({x}, {y})")	
 
-		# collect statistics for this round
 		for pId in range(len(self._players)):
-			self.stats[pId]['gold'].append(self._status[pId].gold)
-			self.stats[pId]['health'].append(self._status[pId].health)
-			self.stats[pId]['moves'].append(sum(1 for m in moveStatusPerPlayer[pId] if m == MoveStatus.Done))				
+			self._round_stats[pId]['moves'] = sum(1 for m in moveStatusPerPlayer[pId] if m == MoveStatus.Done)				
 
 	def _trigger_mine(self, x, y, pId):
 		if self.mine_mode == "damage":
