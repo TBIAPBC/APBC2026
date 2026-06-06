@@ -4,7 +4,7 @@ This add-on provides an improved game visualization and a simple statistics expo
 
 ## Files
 - [A5-Game/Game/illustrator.py](A5-Game/Game/illustrator.py) — renderer and animation generator (draws board, player trails, health colors, gold labels).
-- [A5-Game/Game/stats.py](A5-Game/Game/stats.py) — generates comparative per-player plots (gold, health, moves) from simulator statistics.
+- [A5-Game/Game/stats.py](A5-Game/Game/stats.py) — generates comparative per-player plots for gold, health, movement, crashes, and mine events.
 - [A5-Game/Game/runRobotRace.py](A5-Game/Game/runRobotRace.py) — integrates visualization and the `--stats` flag into the runner.
 
 ## Features
@@ -12,6 +12,7 @@ This add-on provides an improved game visualization and a simple statistics expo
 - Shows player trails and health-based coloring.
 - Displays gold amounts next to robots in gold-colored label boxes. (This could also be a bit annoying mabe a list under the map better let me now)
 - Statistics plots use the same matplotlib color cycle as the visual trails so colors match across outputs.
+- Current charts include gold, health, successful moves, wall crashes, player crashes, mines set, mines triggered, and out-of-gold / out-of-health events.
 
 ## How to run
 - Basic visualization:
@@ -23,9 +24,20 @@ python3 A5-Game/Game/runRobotRace.py --viz output.mp4
 python3 A5-Game/Game/runRobotRace.py --viz output.mp4 --stats
 ```
 
+
+Select specific charts with the short-code option on `--stats` (no extra flag needed):
+```bash
+# all plots
+python3 A5-Game/Game/runRobotRace.py --viz output.mp4 --stats
+
+# selected plots using short codes: g=gold, h=health, m=moves, w=wall crashes,
+# p=player crashes, n=mines set, t=mines triggered, o=out_of_gold, l=out_of_health
+python3 A5-Game/Game/runRobotRace.py --viz output.mp4 --stats gm
+```
+
 Common flags:
 - `--viz <file>` : filename for visualization (e.g., `output.mp4`)
-- `--stats` : generate `stats.png` with per-player series
+- `--stats` : generate `stats.png` with per-player series; optional short-code string selects plots (see examples above)
 
 ## Outputs
 - Animation file named by `--viz` (MP4 recommended)
