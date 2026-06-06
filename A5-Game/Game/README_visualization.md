@@ -1,52 +1,67 @@
 # Visualization and Statistics
 
-This add-on provides an improved game visualization and a simple statistics exporter.
+This document describes the current visualization and statistics behavior in the Robot Race runner.
 
 ## Files
-- [A5-Game/Game/illustrator.py](A5-Game/Game/illustrator.py) — renderer and animation generator (draws board, player trails, health colors, gold labels).
-- [A5-Game/Game/stats.py](A5-Game/Game/stats.py) — generates comparative per-player plots for gold, health, movement, crashes, and mine events.
-- [A5-Game/Game/runRobotRace.py](A5-Game/Game/runRobotRace.py) — integrates visualization and the `--stats` flag into the runner.
+- [A5-Game/Game/illustrator.py](A5-Game/Game/illustrator.py): animation renderer (board, trails, robots, mines, gold pots, and bottom labels).
+- [A5-Game/Game/stats.py](A5-Game/Game/stats.py): selected per-player stats plotting with optional derived metrics.
+- [A5-Game/Game/runRobotRace.py](A5-Game/Game/runRobotRace.py): CLI integration for visualization and stats export.
 
-## Features
-- Produces an animation of the match (MP4 preferred) and can fall back to GIF.
-- Shows player trails and health-based coloring.
-- Displays gold amounts next to robots in gold-colored label boxes. (This could also be a bit annoying mabe a list under the map better let me now)
-- Statistics plots use the same matplotlib color cycle as the visual trails so colors match across outputs.
-- Current charts include gold, health, successful moves, wall crashes, player crashes, mines set, mines triggered, and out-of-gold / out-of-health events.
+## Current behavior
+- Visualization renders MP4/GIF via matplotlib animation.
+- Player trails and stats use a consistent matplotlib color cycle.
+- During visualization, each player has a persistent label below the map in the player color.
+- Bottom label format is:
+	- `PlayerName: current_gold (pots_collected)`
+- Stats plotting supports a selectable set of charts via `--stats` short codes.
+- A derived cumulative metric is available:
+	- `moves_total` (running total of successful moves).
 
-## How to run
-- Basic visualization:
+## Stats short codes
+Use `--stats` alone for all charts, or pass a short-code string for selected charts.
+
+- `g`: gold
+- `h`: health
+- `m`: successful moves per round
+- `c`: cumulative successful moves (`moves_total`)
+- `w`: wall crashes
+- `p`: player crashes
+- `n`: mines set
+- `t`: mines triggered
+- `o`: out_of_gold events
+- `l`: out_of_health events
+
+Examples:
+
 ```bash
-python3 A5-Game/Game/runRobotRace.py --viz output.mp4
-```
-- With statistics (saves `stats.png` by default):
-```bash
-python3 A5-Game/Game/runRobotRace.py --viz output.mp4 --stats
-```
+# all charts
+python3 A5-Game/Game/runRobotRace.py --viz race.mp4 --stats
 
-
-Select specific charts with the short-code option on `--stats` (no extra flag needed):
-```bash
-# all plots
-python3 A5-Game/Game/runRobotRace.py --viz output.mp4 --stats
-
-# selected plots using short codes: g=gold, h=health, m=moves, w=wall crashes,
-# p=player crashes, n=mines set, t=mines triggered, o=out_of_gold, l=out_of_health
-python3 A5-Game/Game/runRobotRace.py --viz output.mp4 --stats gm
+# selected charts: gold + moves + cumulative moves
+python3 A5-Game/Game/runRobotRace.py --viz race.mp4 --stats gmc
 ```
 
-Common flags:
-- `--viz <file>` : filename for visualization (e.g., `output.mp4`)
-- `--stats` : generate `stats.png` with per-player series; optional short-code string selects plots (see examples above)
+## Output location
+All generated media and plots are saved under:
 
-## Outputs
-- Animation file named by `--viz` (MP4 recommended)
-- `stats.png` image when `--stats` is used
+- `plots/`
+
+Behavior:
+- `--viz race.mp4` saves to `plots/race.mp4`
+- `--stats` saves to `plots/stats.png`
+
+Only the `plots/` directory is ignored by git (see repository `.gitignore`).
 
 ## Dependencies
-- Python packages: `matplotlib`, `numpy`, `pillow` (install with `python3 -m pip install matplotlib numpy pillow`)
-- System: `ffmpeg` (required for MP4 output)
+- Python packages: `matplotlib`, `numpy`, `pillow`
+- System package: `ffmpeg` (required for MP4 writing)
 
-## Notes & tips
-- If `ffmpeg` is missing the script may fall back to GIF or fail; ensure `ffmpeg` is on `PATH`.
-- Large media files are excluded by the repository `.gitignore` (`*.mp4`, `*.png`, `*.gif`).
+Install Python packages with:
+
+```bash
+python3 -m pip install matplotlib numpy pillow
+```
+
+## Notes
+- Unknown `--stats` letters are ignored with a warning.
+- If no valid short code is provided, all charts are generated.
