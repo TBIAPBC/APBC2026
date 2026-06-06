@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import random
 import argparse
+from pathlib import Path
 
 from game_utils import nameFromPlayerId
 from game_utils import Direction as D, MoveStatus
@@ -34,6 +35,14 @@ parser.add_argument(
 
 args = parser.parse_args()
 
+PLOTS_DIR = Path('plots')
+PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+
+viz_output = None
+if args.viz:
+	# Keep only the filename and place visualization outputs under plots/.
+	viz_output = str(PLOTS_DIR / Path(args.viz).name)
+
 robot_module_names = {"Test":"test-RobotRace",
 					"Beatme": "beatme-RobotRace"}
 
@@ -45,7 +54,7 @@ else:
    m = Map.makeRandom(30, 30, args.density)
 
 if __name__ == "__main__":
-	sim = Simulator(map=m, vizfile=args.viz, framerate=args.framerate)
+	sim = Simulator(map=m, vizfile=viz_output, framerate=args.framerate)
 
 	for name,module_name in robot_module_names.items():
 		for p in robotmodules[module_name].players:
@@ -82,4 +91,4 @@ if __name__ == "__main__":
 			if not plots:
 				print("No valid stats codes provided; generating all plots.")
 				plots = None
-		plot_stats(sim, 'stats.png', plots=plots)
+		plot_stats(sim, str(PLOTS_DIR / 'stats.png'), plots=plots)
