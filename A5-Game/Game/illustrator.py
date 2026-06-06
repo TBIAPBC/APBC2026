@@ -12,10 +12,14 @@ def _asset(name):
     return os.path.join(_HERE, name)
 
 
-def _mp4_path(path):
+def _animation_path(path):
     root, ext = os.path.splitext(path)
-    if ext.lower() != '.mp4':
-        return root + '.mp4'
+
+    # If user gives "output", save as "output.gif"
+    if not ext:
+        return path + ".gif"
+
+    # If user gives "output.gif" or "output.mp4", keep it
     return path
 
 
@@ -40,7 +44,7 @@ class Illustrator:
         self.find_walls(m)
 
         self.FRAME_PER_SECOND = framerate
-        self.vizfile = _mp4_path(vizfile) if vizfile else vizfile
+        self.vizfile = _animation_path(vizfile) if vizfile else vizfile
 
          # set theme, if no theme is given, use default
         if theme in self.THEMES:
@@ -237,13 +241,24 @@ class Illustrator:
         fig.subplots_adjust(bottom=0.14)
 
         animation = FuncAnimation(fig, self.illustrate_round, self.n_rounds)
+
+        _, ext = os.path.splitext(self.vizfile)
+        ext = ext.lower()
+
+        if ext == ".mp4":
+            writer = "ffmpeg"
+        elif ext == ".gif":
+            writer = "pillow"
+        else:
+            raise ValueError(f"Unsupported animation format: {ext}. Use .gif or .mp4")
+
         animation.save(
             self.vizfile,
-            writer='ffmpeg',
+            writer=writer,
             dpi=200,
             fps=self.FRAME_PER_SECOND,
         )
-        
+
 
     def init_plot(self):
         self.ax.tick_params(
