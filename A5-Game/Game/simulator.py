@@ -99,6 +99,9 @@ class Simulator(object):
 		self.illustrator._add_robots(self._players)
 		self.illustrator._add_nrounds(rounds)
 
+		# track cumulative number of gold pots collected per player
+		self.pots_collected = [0 for _ in range(len(self._players))]
+
 		if self.printInitial:
 			print("Initial board:")
 			print(self)
@@ -111,7 +114,7 @@ class Simulator(object):
 			self._handle_healing(r)
 			# TODO: something to do at the end of the round?
 			self.illustrator.append_goldpots(self._goldPots)
-			self.illustrator.append_robots(self._players)
+			self.illustrator.append_robots(self._players, self.pots_collected)
 			self.illustrator.append_mines(getattr(self,'_mines',{}))
 
 		print("=" * 80)
@@ -504,6 +507,8 @@ class Simulator(object):
 					if self.printEvents:
 						print("Event:", nameFromPlayerId(pId), "took a pot of %d gold." % amount)
 					self._status[pId].gold += amount
+					# record that this player collected a gold pot
+					self.pots_collected[pId] += 1
 					del self._goldPots[moves[pId][1]]
 					numGoldPotsTaken += 1
 				self.map[moves[pId][1]].obj = TileObject.makePlayer(pId)

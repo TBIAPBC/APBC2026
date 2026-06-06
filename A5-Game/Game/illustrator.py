@@ -13,6 +13,7 @@ class Illustrator:
         self.minepos = []
         self.minetime = []
         self.robotsgold = []
+        self.robotspotscollected = []
 
 
         self.width = m.width
@@ -40,7 +41,7 @@ class Illustrator:
     def _add_nrounds(self, rounds):
         self.n_rounds = rounds
 
-    def append_robots(self, robots):
+    def append_robots(self, robots, pots_collected=None):
         rpos, rhealth, rmoney, rgold = [], [], [], []
         for robot in robots:
             rpos.append([robot.status.x, robot.status.y])
@@ -56,6 +57,12 @@ class Illustrator:
         self.robotshealth.append(rhealth)
         self.robotsmoney.append(rmoney)
         self.robotsgold.append(rgold)    # actual gold amounts
+        # store cumulative gold-pots-collected per player for this round
+        if pots_collected is None:
+            pots = [0] * len(robots)
+        else:
+            pots = list(pots_collected)
+        self.robotspotscollected.append(pots)
 
     def append_goldpots(self, goldpots):
         self.goldpos.append(list(goldpots.keys()))
@@ -78,6 +85,28 @@ class Illustrator:
         self.init_trails()
         self.init_goldpots()
         self.init_mines()
+
+        # create persistent player labels below the map (one per robot)
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        colors = colors * (self.n_robots // len(colors) + 1)
+        x_positions = [0.02 + i * (0.96 / max(1, self.n_robots)) for i in range(self.n_robots)]
+        self.player_labels = []
+        for i, name in enumerate(self.robot_names):
+            txt = self.ax.text(
+                x_positions[i],
+                -0.08,
+                f"{name}: - (0)",
+                transform=self.ax.transAxes,
+                color=colors[i],
+                fontsize=10,
+                ha='left',
+                va='top'
+            )
+            self.player_labels.append(txt)
+
+        # leave room for labels below the axes
+        fig.subplots_adjust(bottom=0.14)
 
         gif = FuncAnimation(fig, self.illustrate_round,
                             self.n_rounds)
@@ -140,13 +169,17 @@ class Illustrator:
         self.robot.set_sizes(self.robotsmoney[i])
         self.robot.set_array(np.array(self.robotshealth[i]))
 
-        # gold label
-        if not hasattr(self, 'gold_texts'):
-            self.gold_texts = [self.ax.text(0, 0, '', ha='left', va='center', fontsize=10, color='black', weight='bold', bbox=dict(boxstyle='round,pad=0.3', facecolor='gold', alpha=0.7)) for _ in range(self.n_robots)]
-        
-        for j, pos in enumerate(self.robotspos[i]):
-            self.gold_texts[j].set_position((pos[0] + 0.8, pos[1]))
-            self.gold_texts[j].set_text(str(int(self.robotsgold[i][j])))
+        # update bottom player labels with current gold amounts
+        for j in range(self.n_robots):
+            try:
+                curr = int(self.robotsgold[i][j])
+            except Exception:
+                curr = '-'
+            try:
+                pots = int(self.robotspotscollected[i][j])
+            except Exception:
+                pots = '-'
+            self.player_labels[j].set_text(f"{self.robot_names[j]}: {curr} ({pots})")
 
         # mines
         self.mines.set_offsets(self.minepos[i])
