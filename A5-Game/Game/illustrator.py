@@ -1,13 +1,12 @@
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib.patches import Rectangle # import needed for bar outline
 import numpy as np
 import os
 
-
+# all asset paths are relative to this file, so it works no matter where the game is run from
 _HERE = os.path.dirname(os.path.abspath(__file__))
-
-
 def _asset(name):
     return os.path.join(_HERE, name)
 
@@ -28,13 +27,11 @@ class Illustrator:
         self.robotspos = []
         self.robotshealth = []
         self.robotsmoney = []
+        self.robotsgold = []   # raw gold per round, for scoreboard
         self.goldpos = []
         self.goldamount = []
         self.minepos = []
         self.minetime = []
-        self.robotsgold = []
-        self.robotspotscollected = []
-
 
         self.width = m.width
         self.height = m.height
@@ -53,6 +50,8 @@ class Illustrator:
             print(f"Unknown theme '{theme}', using default.")
             self.theme = self.THEMES['default']
 
+        # if any png the theme needs cant be loaded, fall back to default
+        # this way a missing/typo'd image doesnt crash the game, it just looks plain
         for key in ('wall_image', 'mine_image', 'gold_image'):
             path = self.theme.get(key)
             if path is None:
@@ -60,7 +59,7 @@ class Illustrator:
             try:
                 plt.imread(path)
             except (FileNotFoundError, OSError):
-                print(f"Could not load {path} for theme '{theme}', using default theme.")
+                print(f"Could not load {path} for theme '{theme}', falling back to default theme.")
                 self.theme = self.THEMES['default']
                 break
     
@@ -75,7 +74,8 @@ class Illustrator:
             'wall_image': None,
             'zoom': None,
             'mine_image': None,
-            'gold_image': None
+            'gold_image': None,
+            'gap_color': "#EBEBEB"       # white on dark grey walls
         },
         'desert': {
             'wall_color': "#F9F2D2",
@@ -84,26 +84,28 @@ class Illustrator:
             'zoom': '0.024',
             'mine_image': _asset('illustrations/expl.png'),
             'gold_image': _asset('illustrations/sand_gold.png'),
-            'floor_color': "#F9E6D2"
+            'floor_color': "#F9E6D2",
+            'gap_color': "#A3934D"       # blue on sandy beige
         },
         'forest': {
             'wall_color': '#c8e6c9',
-            'wall_edge': '#388e3c',
+            'wall_edge': "#388e3c9d",
             'wall_image': _asset('illustrations/evergreen_forest.png'),
             'zoom': '0.024',
             'mine_image': _asset('illustrations/hole.png'),
             'gold_image': _asset('illustrations/grass_gold.png'),
-            'floor_color': "#d8eed8"
+            'floor_color': "#d8eed8",
+            'gap_color': "#A58120"       # orange-red on green
         },
         'garden': {
-            'wall_color': '#f0f4c3',
-            'wall_edge': '#afb42b',
+            'wall_color': "#91c772",
+            'wall_edge': "#68a356ca",
             'wall_image': _asset('illustrations/garden_wall.png'),
             'zoom': '0.012',
             'mine_image': _asset('illustrations/hole.png'),
             'gold_image': _asset('illustrations/grass_gold.png'),
-            'floor_color': "#c0dabd"
-            
+            'floor_color': "#c8dac6",
+            'gap_color': "#967230"       # orange-red on green
         },
         'island': {
             'wall_color': "#F5DD90",
@@ -112,7 +114,8 @@ class Illustrator:
             'zoom': '0.024',
             'mine_image': _asset('illustrations/expl.png'),
             'gold_image': _asset('illustrations/sand_gold.png'),
-            'floor_color': "#9ed0e1"
+            'floor_color': "#9ed0e1",
+            'gap_color': "#73ABDF"       # orange-red on blue water
         }
     }
 
@@ -127,32 +130,51 @@ class Illustrator:
     def _add_robots(self, robots):
         self.n_robots = len(robots)
         self.robot_names = [robot.player_name for robot in robots]
+        # hand-picked palette of distinguishable colours, used first
+        # if there are more bots than we have hand-picked, fall back to hsv for the rest
+        custom = [
+            "#ff3f6f",  # red
+            "#50ff67",  # green
+            "#5378ff",  # blue
+            "#ff9b54",  # orange
+            "#cf33ff",  # purple
+            '#42d4f4',  # cyan
+            '#f032e6',  # magenta
+            "#f0ff20",  # brown
+            "#f8b4cd",  # pink
+            '#469990',  # teal
+            '#dcbeff',  # lavender
+            '#800000',  # maroon
+            '#aaffc3',  # mint
+            '#808000',  # olive
+            "#ffd900",  # yellow
+        ]
+        if self.n_robots <= len(custom):
+            self.COLORS = custom[:self.n_robots]
+        else:
+            # fill the rest from hsv, skipping hues too close to ones we already have
+            cmap = plt.get_cmap('hsv')
+            extra = self.n_robots - len(custom)
+            self.COLORS = custom + [cmap(i / extra) for i in range(extra)]
 
     def _add_nrounds(self, rounds):
         self.n_rounds = rounds
 
     def append_robots(self, robots, pots_collected=None):
-        rpos, rhealth, rmoney, rgold = [], [], [], []
+        rpos, rhealth, rmoney = [], [], []
         for robot in robots:
             rpos.append([robot.status.x, robot.status.y])
             rhealth.append(robot.status.health)
             rmoney.append(robot.status.gold)
-            rgold.append(robot.status.gold)  # Store actual gold amount
-
 
         maxmoney = max(rmoney)
+        rgold = list(rmoney)   # raw gold before scaling
         rmoney = [80*money/maxmoney+25 for money in rmoney]
 
         self.robotspos.append(rpos)
         self.robotshealth.append(rhealth)
         self.robotsmoney.append(rmoney)
-        self.robotsgold.append(rgold)    # actual gold amounts
-        # store cumulative gold-pots-collected per player for this round
-        if pots_collected is None:
-            pots = [0] * len(robots)
-        else:
-            pots = list(pots_collected)
-        self.robotspotscollected.append(pots)
+        self.robotsgold.append(rgold)
 
     def append_goldpots(self, goldpots):
         self.goldpos.append(list(goldpots.keys()))
@@ -166,25 +188,48 @@ class Illustrator:
         self.minetime.append(list(mines.values()))
 
     def _illustrate(self):
+        per_row = 4
+        rows = (self.n_robots + per_row - 1) // per_row
 
-        fig, self.ax = plt.subplots(
-            nrows=1, ncols=1, figsize=(8, 8))
-        fig.subplots_adjust(top=0.92, bottom=0.28)
+        # space the legend needs at the bottom, in inches
+        legend_in = 1.4 + 0.9 * rows
+
+        # tight side margins so the map fills the figure and we dont waste pixels on padding
+        left_frac, right_frac, top_frac = 0.02, 0.98, 0.95
+
+        # smaller figure --> less ram and the title/legend look bigger relative to the map
+        # we still get the no-side-padding win from before
+        fig_width = 7
+        axes_in = fig_width * (right_frac - left_frac)
+        fig_height = (axes_in + legend_in) / top_frac
+
+        fig, self.ax = plt.subplots(nrows=1, ncols=1, figsize=(fig_width, fig_height))
+        fig.subplots_adjust(left=left_frac, right=right_frac, top=top_frac, bottom=legend_in / fig_height)
 
         self.init_plot()
+        # force the axes BOX to be square (not the datalim) so walls dont draw skewed
+        self.ax.set_aspect('equal', adjustable='box')
         self.init_walls()
 
         # --- Draw walls only once and not at every frame to make the animation faster ---
 
         fig.canvas.draw() # make sure walls are drawn
         extent = self.ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-        # safe area inside the axis as png
-        plt.savefig('background.png', dpi=200, bbox_inches=extent)
+        # safe area inside the axis as png, use a temp file so we dont leave artifacts behind
+        import tempfile
+        bg_fd, bg_path = tempfile.mkstemp(suffix='.png')
+        os.close(bg_fd)
+        plt.savefig(bg_path, dpi=200, bbox_inches=extent)
 
         self.ax.cla()
         self.init_plot()  # restore axis limits
+        self.ax.set_aspect('equal', adjustable='box')   # axes box stays square after cla
         # paste backround image as background
-        bg_img = plt.imread('background.png')
+        bg_img = plt.imread(bg_path)
+        try:
+            os.remove(bg_path)   # clean up, we already have it in memory
+        except OSError:
+            pass
         self.ax.imshow(bg_img, extent=[-0.5, self.width-0.5, -0.5, self.height-0.5],
                     origin='upper', zorder=0)
         # explicitly restore limits in case imshow changed them
@@ -195,50 +240,6 @@ class Illustrator:
         self.init_trails()
         self.init_goldpots()
         self.init_mines()
-
-        # create persistent player labels below the map (one per robot)
-        prop_cycle = plt.rcParams['axes.prop_cycle']
-        colors = prop_cycle.by_key()['color']
-        colors = colors * (self.n_robots // len(colors) + 1)
-        x_positions = [0.02 + i * (0.96 / max(1, self.n_robots)) for i in range(self.n_robots)]
-        self.player_labels = []
-        for i, name in enumerate(self.robot_names):
-            txt = self.ax.text(
-                x_positions[i],
-                -0.08,
-                f"{name}: - (0)",
-                transform=self.ax.transAxes,
-                color=colors[i],
-                fontsize=10,
-                ha='left',
-                va='top'
-            )
-            self.player_labels.append(txt)
-
-        # leave room for labels below the axes
-        fig.subplots_adjust(bottom=0.14)
-
-        # create persistent player labels below the map (one per robot)
-        prop_cycle = plt.rcParams['axes.prop_cycle']
-        colors = prop_cycle.by_key()['color']
-        colors = colors * (self.n_robots // len(colors) + 1)
-        x_positions = [0.02 + i * (0.96 / max(1, self.n_robots)) for i in range(self.n_robots)]
-        self.player_labels = []
-        for i, name in enumerate(self.robot_names):
-            txt = self.ax.text(
-                x_positions[i],
-                -0.08,
-                f"{name}: - (0)",
-                transform=self.ax.transAxes,
-                color=colors[i],
-                fontsize=10,
-                ha='left',
-                va='top'
-            )
-            self.player_labels.append(txt)
-
-        # leave room for labels below the axes
-        fig.subplots_adjust(bottom=0.14)
 
         animation = FuncAnimation(fig, self.illustrate_round, self.n_rounds)
 
@@ -259,7 +260,6 @@ class Illustrator:
             fps=self.FRAME_PER_SECOND,
         )
 
-
     def init_plot(self):
         self.ax.tick_params(
             bottom=False,
@@ -270,11 +270,12 @@ class Illustrator:
         self.ax.set_ylim(top=self.height-0.5, bottom=-0.5)
         self.ax.set_xlim(left=-0.5, right=self.width-0.5)
 
+        self.ax.set_aspect('equal', adjustable='box') # keep cells square no matter the figure shape
+
     def init_walls(self):
-        x_coords, y_coords = list(zip(*self.walls))
         wall_set = set(self.walls)
-        
-        # find all diagonal gaps
+
+        # find all diagonal gaps (unchanged)
         gap_x, gap_y = [], []
         seen_gaps = set()
         for (x, y) in self.walls:
@@ -288,88 +289,163 @@ class Illustrator:
                             gap_x.append(gap[0])
                             gap_y.append(gap[1])
 
-        if self.theme['wall_image'] is not None: # if theme is not default
-            # emojis as files found in illustrations folder (source and if we need to look up: https://www.geeksforgeeks.org/python/working-with-images-in-python-using-matplotlib/)
-            wall_img = plt.imread(self.theme['wall_image'])
-            # walling our walls
-            self.ax.scatter(x=x_coords, y=y_coords, marker='s', c=self.theme['wall_color'], s=self.markersize, linewidths=0.5, edgecolors=self.theme['wall_edge'])
-            # we have to draw it for each tile (check out https://matplotlib.org/stable/gallery/text_labels_and_annotations/demo_annotation_box.html)
-            for (x, y) in self.walls:
-                imagebox = OffsetImage(wall_img, zoom=float(self.theme['zoom'])) # loading image
-                box = AnnotationBbox(imagebox, (x, y), frameon=False) # placing image as coordinate
-                self.ax.add_artist(box) # we need add_artist to add it to the plot
-            
-        else: # default theme 
-            self.ax.scatter(x=x_coords, y=y_coords, marker='s', c='#8888aa',
-                            s=self.markersize, edgecolors='#555577', linewidths=1.5)
-            
-        # draw gap indicators at diagonal gaps 
-        if gap_x:
-            self.ax.scatter(x=gap_x, y=gap_y, marker='+', c='white', s=self.markersize * 0.15, zorder=3, alpha=0.6)
+        # pick colors based on theme
+        if self.theme['wall_image'] is not None:
+            face = self.theme['wall_color']
+            edge = self.theme['wall_edge']
+            edge_lw = 0.5
+        else:
+            face = '#8888aa'
+            edge = '#555577'
+            edge_lw = 1.0
 
-        # draw floor tiles on non-wall cells, slightly transparent
+        # draw each wall as a 1x1 rectangle centered on its grid cell
+        # Rectangle uses bottom-left corner, so shift by -0.5
+        for (x, y) in self.walls:
+            rect = Rectangle((x - 0.5, y - 0.5), 1, 1,
+                            facecolor=face, edgecolor=edge,
+                            linewidth=edge_lw, zorder=2)
+            self.ax.add_patch(rect)
+
+        # PNG overlay for themed mode (unchanged)
+        if self.theme['wall_image'] is not None:
+            wall_img = plt.imread(self.theme['wall_image'])
+            for (x, y) in self.walls:
+                imagebox = OffsetImage(wall_img, zoom=float(self.theme['zoom']))
+                box = AnnotationBbox(imagebox, (x, y), frameon=False)
+                self.ax.add_artist(box)
+
+        # gap indicators (unchanged)
+        if gap_x:
+            gap_color = self.theme.get('gap_color', '#FFFFFF')
+            self.ax.scatter(x=gap_x, y=gap_y, marker='+', c=gap_color,
+                            s=self.markersize * 0.35, zorder=3, linewidths=1.5)
+
+        # floor tiles — also Rectangles for the same reason
         if self.theme.get('floor_color') is not None:
-            wall_set = set(self.walls)
-            floor_x, floor_y = [], []
             for x in range(self.width):
                 for y in range(self.height):
                     if (x, y) not in wall_set:
-                        floor_x.append(x)
-                        floor_y.append(y)
-            self.ax.scatter(x=floor_x, y=floor_y, marker='s', c=self.theme['floor_color'],
-                            s=self.markersize, alpha=0.5, zorder=0)
-
-    # different colors for each robot
-    COLORS = ['#00ffff', '#ff6b6b', '#6bff6b', '#ffaa00', '#aa6bff', '#ff69b4', '#ff4500']
+                        rect = Rectangle((x - 0.5, y - 0.5), 1, 1,
+                                        facecolor=self.theme['floor_color'],
+                                        edgecolor='none',
+                                        alpha=0.5, zorder=0)
+                        self.ax.add_patch(rect)
 
     def init_trails(self):
         self.trails = [
-            self.ax.plot([], [], color = self.COLORS[i], alpha=0.5, linewidth=self.linewidth,zorder=1, label=self.robot_names[i])[0]
+            self.ax.plot([], [], color=self.COLORS[i], alpha=0.5, linewidth=self.linewidth,
+                         zorder=1, label=self.robot_names[i])[0]
             for i in range(self.n_robots)
         ]
 
         # robot legend at the bottom in every theme () max 4 per row then wrap)
-        robot_img = plt.imread('illustrations/robot_3.png')
+        # if the legend png is missing we fall back to a plain matplotlib legend
+        try:
+            plt.imread(_asset('illustrations/robot.png'))
+            plt.imread(_asset('illustrations/robot_3.png'))
+            robot_img = plt.imread(_asset('illustrations/robot_3.png'))
+        except (FileNotFoundError, OSError):
+            robot_img = None
+        if robot_img is None:
+            legend_handles = [
+                plt.scatter(
+                    [], [],
+                    marker=self.MARKERS[i % len(self.MARKERS)],
+                    color=self.COLORS[i],
+                    edgecolors='black',
+                    linewidths=1,
+                    label=self.robot_names[i]
+                )
+                for i in range(self.n_robots)
+            ]
+            self.ax.legend(
+                handles=legend_handles,
+                loc='upper center',
+                bbox_to_anchor=(0.5, -0.12),
+                ncol=min(4, self.n_robots),
+                prop=dict(size=11),
+                framealpha=0.75
+            )
+            self.legend_gold_labels = []   # no image legend, nothing to update
+            return
+        
         per_row = 4
+        # shrink legend robots and tighten rows when there are many so they fit
+        rows = (self.n_robots + per_row - 1) // per_row
+        if rows <= 2:
+            legend_zoom, row_step, name_fontsize, name_gap = 0.055, 5.0, 12, 2.2
+        elif rows == 3:
+            legend_zoom, row_step, name_fontsize, name_gap = 0.045, 4.5, 10, 2.0
+        else:   # 4+ rows
+            legend_zoom, row_step, name_fontsize, name_gap = 0.035, 3.8, 9, 1.6
         # "Players" title above the legend rows
         self.ax.text(0, -1.6, 'Players', ha='left', va='top',
-                     fontsize=10, fontweight='bold', clip_on=False)
+                     fontsize=18, fontweight='bold', clip_on=False)
         for i in range(self.n_robots):
             row = i // per_row
             col = i % per_row
             # fixed spacing, packed from the left
             x = 3 + col * 7
-            y = -4.2 - row * 5   # each extra row goes further down
+            y = -4.2 - row * row_step   # each extra row goes further down
             tinted = self.tint_image(robot_img, self.COLORS[i])
-            imagebox = OffsetImage(tinted, zoom=0.055)   # small enough to fit a row nicely
+            imagebox = OffsetImage(tinted, zoom=legend_zoom)   # small enough to fit a row nicely
             box = AnnotationBbox(imagebox, (x, y), frameon=False, annotation_clip=False)
             self.ax.add_artist(box)
             # name under each robot
-            self.ax.text(x, y - 2.2, self.robot_names[i], ha='center', va='top',
-                         fontsize=7, clip_on=False)
+            self.ax.text(x, y - name_gap, self.robot_names[i], ha='center', va='top',
+                         fontsize=name_fontsize, clip_on=False)
+        # gold amount line below each name, updated every frame
+        self.legend_gold_labels = []
+        for i in range(self.n_robots):
+            row = i // per_row
+            col = i % per_row
+            x = 3 + col * 7
+            y = -4.2 - row * row_step
+            lbl = self.ax.text(x, y - name_gap - 0.9, '0',
+                               ha='center', va='top', fontsize=name_fontsize - 1,
+                               color='black', fontweight='bold', clip_on=False,
+                               bbox=dict(facecolor='#FFD700', edgecolor='none',
+                                         boxstyle='round,pad=0.2'))
+            self.legend_gold_labels.append(lbl)
 
     # different markers for each robot 
     MARKERS = ['o', 'D', '^', 's', 'P', 'h', '*']
 
     def init_robots(self):
-        # health ring goes green to red with health
-        self.robot_outlines = []
+        # hp bar instead of ring (since hasnt been implemented)
+        self.hp_bg = []
+        self.hp_fg = []
         for i in range(self.n_robots):
-            outline = self.ax.scatter(x=[], y=[], marker='o', vmin=0, vmax=100,
-                        c=[], cmap='RdYlGn', zorder=2)
-            self.robot_outlines.append(outline)
+            bg = Rectangle((0, 0), 1, 0.22, facecolor='#333333', edgecolor='black', linewidth=1.5, zorder=4, alpha=0.5) # 0.22 is bar thigckness, linewidth outline thickness
+            fg = Rectangle((0, 0), 1, 0.22, facecolor="#3edf30", edgecolor='none', zorder=5, alpha=0.5)
+            self.ax.add_patch(bg)
+            self.ax.add_patch(fg)
+            self.hp_bg.append(bg)
+            self.hp_fg.append(fg)
 
         # robots are now tinted images in every theme --> default included
-        # load the grey robot and tinte it but only once 
-        robot_img = plt.imread('illustrations/robot.png')
+        # load the grey robot and tinte it but only once
+        # if the robot png is missing we fall back to plain shape markers so the game still runs
+        try:
+            robot_img = plt.imread(_asset('illustrations/robot.png'))
+        except (FileNotFoundError, OSError):
+            robot_img = None
         self.robot_boxes = []
-        for i in range(self.n_robots):
-            tinted = self.tint_image(robot_img, self.COLORS[i])
-            imagebox = OffsetImage(tinted, zoom=0.03)
-            box = AnnotationBbox(imagebox, (0, 0), frameon=False, zorder=3)
-            box.set_visible(False)   # hidden until the robot needs it
-            self.ax.add_artist(box)
-            self.robot_boxes.append(box)
+        self.robot_markers = []
+        if robot_img is not None:
+            for i in range(self.n_robots):
+                tinted = self.tint_image(robot_img, self.COLORS[i])
+                imagebox = OffsetImage(tinted, zoom=0.032)
+                box = AnnotationBbox(imagebox, (0, 0), frameon=False, zorder=3)
+                box.set_visible(False)   # hidden until the robot needs it
+                self.ax.add_artist(box)
+                self.robot_boxes.append(box)
+        else:   # fallback: plain shape markers like in the very first version
+            for i in range(self.n_robots):
+                marker = self.ax.scatter(x=[], y=[], marker=self.MARKERS[i % len(self.MARKERS)],
+                    color=self.COLORS[i], edgecolors='black', linewidths=1, zorder=3)
+                self.robot_markers.append(marker)
 
     def tint_image(self, img, color):
         # tint only the light parts dark parts stay neutral
@@ -379,9 +455,11 @@ class Illustrator:
         tinted = img.copy()
         # brightness of each pixel
         strength = img[:, :, :3].mean(axis=2)
-        tinted[:, :, 0] = img[:, :, 0] * (1 - strength) + r * strength
-        tinted[:, :, 1] = img[:, :, 1] * (1 - strength) + g * strength
-        tinted[:, :, 2] = img[:, :, 2] * (1 - strength) + b * strength
+        boost = strength ** 0.5
+         # bias colour intensity towards colour not grex
+        tinted[:, :, 0] = img[:, :, 0] * (1 - boost) + r * boost
+        tinted[:, :, 1] = img[:, :, 1] * (1 - boost) + g * boost
+        tinted[:, :, 2] = img[:, :, 2] * (1 - boost) + b * boost
         # alpha channel stays untouched so transparency in background is kept
         return tinted
 
@@ -454,28 +532,34 @@ class Illustrator:
             self.goldpots.set_offsets(self.goldpos[i] if self.goldpos[i] else np.empty((0, 2)))
             self.goldpots.set_sizes(sizes if sizes else [])
 
-        # robots: move robot images, ring shows health
-        for j, (outline, box) in enumerate(zip(self.robot_outlines, self.robot_boxes)):
-            pos = [self.robotspos[i][j]]
-            size = self.robotsmoney[i][j]
-            outline.set_offsets(pos)
-            outline.set_sizes([size * 1.6]) # larger, so the health ring peeks out behind the robot
-            outline.set_array(np.array([self.robotshealth[i][j]]))
-            box.xybox = self.robotspos[i][j]
-            box.xy = self.robotspos[i][j]
-            box.set_visible(True)
+        # robot --> move robot images, hp bar above shows health
+        # if no robot image was loaded we fall back to the shape markers
+        if self.robot_boxes:
+            for j, box in enumerate(self.robot_boxes):
+                box.xybox = self.robotspos[i][j]
+                box.xy = self.robotspos[i][j]
+                box.set_visible(True)
+        else:   # fallback markers
+            for j, marker in enumerate(self.robot_markers):
+                pos = [self.robotspos[i][j]]
+                size = self.robotsmoney[i][j]
+                marker.set_offsets(pos)
+                marker.set_sizes([size])
 
-        # update bottom player labels with current gold amounts
+        # hp bar above each robot
         for j in range(self.n_robots):
-            try:
-                curr = int(self.robotsgold[i][j])
-            except Exception:
-                curr = '-'
-            try:
-                pots = int(self.robotspotscollected[i][j])
-            except Exception:
-                pots = '-'
-            self.player_labels[j].set_text(f"{self.robot_names[j]}: {curr} ({pots})")
+            rx, ry = self.robotspos[i][j]
+            hp = self.robotshealth[i][j]
+            bar_y = ry + 0.7
+            bar_w = 1.1
+            self.hp_bg[j].set_xy((rx - bar_w/2, bar_y))
+            self.hp_bg[j].set_width(bar_w)
+            self.hp_fg[j].set_xy((rx - bar_w/2, bar_y))
+            self.hp_fg[j].set_width(bar_w * (hp / 100))
+
+        # update gold in player legend
+        for j in range(self.n_robots):
+            self.legend_gold_labels[j].set_text(str(int(self.robotsgold[i][j])))
 
         # mines
         if self.mine_boxes is not None:   # themed: move mine images, hide the rest
