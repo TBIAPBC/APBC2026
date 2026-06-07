@@ -32,7 +32,6 @@ class Illustrator:
         self.goldamount = []
         self.minepos = []
         self.minetime = []
-
         self.width = m.width
         self.height = m.height
         self.markersize = (200*900)/(self.width*self.height)
@@ -59,6 +58,7 @@ class Illustrator:
             try:
                 plt.imread(path)
             except (FileNotFoundError, OSError):
+                print(f"Could not load {path} for theme '{theme}', falling back to default theme.")
                 print(f"Could not load {path} for theme '{theme}', falling back to default theme.")
                 self.theme = self.THEMES['default']
                 break
@@ -160,8 +160,8 @@ class Illustrator:
     def _add_nrounds(self, rounds):
         self.n_rounds = rounds
 
-    def append_robots(self, robots, pots_collected=None):
-        rpos, rhealth, rmoney = [], [], []
+    def append_robots(self, robots):
+        rpos, rhealth, rmoney, = [], [], []
         for robot in robots:
             rpos.append([robot.status.x, robot.status.y])
             rhealth.append(robot.status.health)
@@ -560,6 +560,7 @@ class Illustrator:
         # update gold in player legend
         for j in range(self.n_robots):
             self.legend_gold_labels[j].set_text(str(int(self.robotsgold[i][j])))
+
 
         # mines
         if self.mine_boxes is not None:   # themed: move mine images, hide the rest

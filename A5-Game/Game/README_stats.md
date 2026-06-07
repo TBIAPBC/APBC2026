@@ -9,10 +9,6 @@ This document describes the current visualization and statistics behavior in the
 
 ## Current behavior
 - Visualization renders MP4/GIF via matplotlib animation.
-- Player trails and stats use a consistent matplotlib color cycle.
-- During visualization, each player has a persistent label below the map in the player color.
-- Bottom label format is:
-	- `PlayerName: current_gold (pots_collected)`
 - Stats plotting supports a selectable set of charts via `--stats` short codes.
 - A derived cumulative metric is available:
 	- `moves_total` (running total of successful moves).

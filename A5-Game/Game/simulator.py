@@ -142,7 +142,7 @@ class Simulator(object):
 				self.stats[pId]['out_of_health'].append(round_stats['out_of_health'])
 			# TODO: something to do at the end of the round?
 			self.illustrator.append_goldpots(self._goldPots)
-			self.illustrator.append_robots(self._players, self.pots_collected)
+			self.illustrator.append_robots(self._players)
 			self.illustrator.append_mines(getattr(self,'_mines',{}))
 			if self.pov_recorder.prefix:
 				self.pov_recorder.record_round(self._players, self._goldPots)
@@ -494,6 +494,7 @@ class Simulator(object):
 					self._decrease_health(pId,
 						self.params.healthPerPlayerCrash
 						+ random.randint(0,self.params.healthPerPlayerCrashRandom))
+				# collecting stats
 				if ms == MoveStatus.CrashWall:
 					self._round_stats[pId]['wall_crashes'] += 1
 				elif ms == MoveStatus.CrashPlayer:
@@ -587,8 +588,11 @@ class Simulator(object):
 					self._round_stats[pId]['mines_triggered'] += 1
 					print(f"Player {pId} triggered mine at ({x}, {y})")	
 
+		# collect statistics for this round
 		for pId in range(len(self._players)):
-			self._round_stats[pId]['moves'] = sum(1 for m in moveStatusPerPlayer[pId] if m == MoveStatus.Done)				
+			self.stats[pId]['gold'].append(self._status[pId].gold)
+			self.stats[pId]['health'].append(self._status[pId].health)
+			self.stats[pId]['moves'].append(sum(1 for m in moveStatusPerPlayer[pId] if m == MoveStatus.Done))				
 
 	def _trigger_mine(self, x, y, pId):
 		if self.mine_mode == "damage":
