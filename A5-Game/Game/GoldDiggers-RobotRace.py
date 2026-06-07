@@ -15,6 +15,8 @@ class BasicBot(Player):
                 self.player_name = "Team_1_GoldDigger"
                 self.ourMap = Map(width, height)
                 self.mine_memory = {}
+                self.last_junction = None
+                self.repositioning_target = None
 
         def round_begin(self, r):
                  #map memory
@@ -75,19 +77,23 @@ class BasicBot(Player):
                 assert len(status.goldPots) > 0
                 goldLocation = next(iter(status.goldPots))
 
+                # remember last junction
+                neighbours = self.ourMap.nonWallNeighbours(curpos)
+                if len(neighbours) >= 3:
+                        self.last_junction = curpos
 
                 print(status)
                 print("status"*20)
                 ## move towards gold pot
                 numMoves = 4
                 
-                paths_to_middle = AllShortestPaths(goldLocation,ourMap)
-                bestpath = paths_to_middle.shortestPathFrom(curpos)
+                paths_to_gold = AllShortestPaths(goldLocation,ourMap)
+                bestpath = paths_to_gold.shortestPathFrom(curpos)
                 bestpath = self.check_path(status, bestpath, numMoves)
                 bestpath = bestpath[1:]
                 bestpath.append( goldLocation )
 
-                low_gold_mode = True if status.gold < 40 else False
+                low_gold_mode = True if status.gold < 20 else False
                 max_rounds_to_pot = 4 if not low_gold_mode else 1
 
                 distance=len(bestpath)
@@ -96,13 +102,24 @@ class BasicBot(Player):
                 if numMoves>0 and distance/numMoves > min(status.goldPotRemainingRounds, max_rounds_to_pot):
                         # waiting mode
                         # numMoves = 0
-                        # repositioning mode: move towards middle of map to increase likelihood of finding next gold pot
+                        # repositioning mode: move towards last junction to increase likelihood of finding next gold pot
                         numMoves = 1
-                        middle_of_map = (self.ourMap.width//2, self.ourMap.height//2)
-                        paths_to_middle = AllShortestPaths(middle_of_map,self.ourMap)
-                        bestpath = paths_to_middle.shortestPathFrom(curpos)
-                        bestpath = bestpath[1:]
-                        bestpath.append( middle_of_map )
+                        if self.repositioning_target is not None:
+                                if curpos == self.repositioning_target:
+                                        self.repositioning_target = None
+                                        numMoves = 0
+
+                        # find all free neighbors to find out if stuck in a dead end
+                        elif len(self.ourMap.nonWallNeighbours(curpos)) <= 1 and self.last_junction is not None:
+                                paths_to_junction = AllShortestPaths(self.last_junction, self.ourMap)
+                                bestpath = paths_to_junction.shortestPathFrom(curpos)
+                                bestpath = bestpath[1:]
+                                bestpath.append(self.last_junction)
+                                self.repositioning_target = self.last_junction
+
+                        else:
+                        # otherwise wait
+                                numMoves = 0
 
                 return self._as_directions(curpos,bestpath[:numMoves])
         
