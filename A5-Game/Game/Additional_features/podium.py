@@ -71,27 +71,24 @@ def draw_podium(standings, output_file="podium.png", bot_images=None):
     while len(top3) < 3:
         top3.append(("—", 0))
 
-    extras = standings[3:]
-    n_extras = len(extras)
-    right_bound = max(3.6, 2.5 + n_extras * 0.85)
+    extras = standings[3:4]
 
-    
     display = [
         (0, top3[1], 0.6, "#a0a0b0", 2),
         (1, top3[0], 1.0, "#c8a822", 1),
         (2, top3[2], 0.4, "#a0634a", 3),
     ]
 
-    fig, ax = plt.subplots(figsize=(10 + n_extras, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
     fig.patch.set_facecolor(BG_COLOR)
     ax.set_facecolor(BG_COLOR)
-    ax.set_xlim(-1, right_bound + 0.3)
+    ax.set_xlim(-1, 3.9)
     ax.set_ylim(0, 2.0)
     ax.axis("off")
     ax.set_title("Final Results", fontsize=35, fontweight="bold",
                  pad=16, color="#f0f0f0")
 
-    _draw_confetti(ax, xlim=(-1, right_bound + 0.3))
+    _draw_confetti(ax, xlim=(-1, 3.9))
 
     bar_width = 0.75
 
@@ -111,7 +108,6 @@ def draw_podium(standings, output_file="podium.png", bot_images=None):
                 bbox=dict(boxstyle="round,pad=0.3", facecolor=BG_COLOR,
                           edgecolor=GOLD_COLOR, linewidth=1.5))
 
-    # All players beyond 3rd placed dynamically on the floor
     for i, (name, gold) in enumerate(extras):
         x4 = 2.5 + i * 0.85
         robot_top4 = _draw_robot(ax, x4, 0, name, bot_images)
@@ -126,7 +122,7 @@ def draw_podium(standings, output_file="podium.png", bot_images=None):
                           edgecolor=GOLD_COLOR, linewidth=1.5))
 
     if extras:
-        ax.text(right_bound + 0.2, 0.1, "still showed up", ha="right", va="bottom",
+        ax.text(3.8, 0.1, "still showed up", ha="right", va="bottom",
                 fontsize=16, color="white", zorder=3,
                 bbox=dict(boxstyle="round,pad=0.3", facecolor=BG_COLOR,
                           edgecolor="white", linewidth=1.5))
