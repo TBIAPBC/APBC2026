@@ -373,23 +373,31 @@ class Illustrator:
         per_row = 4
         # shrink legend robots and tighten rows when there are many so they fit
         rows = (self.n_robots + per_row - 1) // per_row
+        # legend was tuned on a 30-wide map. on bigger maps each data unit is fewer
+        # inches so the fixed offsets collapse and robots/text overlap. scale every
+        # data-coord offset by width/30 so the physical layout stays put on any map.
+        s = self.width / 30.0
         if rows <= 2:
-            legend_zoom, row_step, name_fontsize, name_gap = 0.055, 5.0, 12, 2.2
+            legend_zoom, row_step, name_fontsize, name_gap = 0.055, 5.0*s, 12, 2.2*s
         elif rows == 3:
-            legend_zoom, row_step, name_fontsize, name_gap = 0.045, 4.5, 10, 2.0
+            legend_zoom, row_step, name_fontsize, name_gap = 0.045, 4.5*s, 10, 2.0*s
         else:   # 4+ rows
-            legend_zoom, row_step, name_fontsize, name_gap = 0.035, 3.8, 9, 1.6
+            legend_zoom, row_step, name_fontsize, name_gap = 0.035, 3.8*s, 9, 1.6*s
         # "Players" title above the legend rows
-        self.ax.text(0, -1.6, 'Players', ha='left', va='top',
+        self.ax.text(0, -1.6*s, 'Players', ha='left', va='top',
                      fontsize=18, fontweight='bold', clip_on=False)
+
+        # x spacing --> divides map width so it adjusts to different map size
+        col_step = self.width / per_row
+        col_start = col_step / 2   # center of first slot
+
         for i in range(self.n_robots):
             row = i // per_row
             col = i % per_row
-            # fixed spacing, packed from the left
-            x = 3 + col * 7
-            y = -4.2 - row * row_step   # each extra row goes further down
+            x = col_start + col * col_step
+            y = -4.2*s - row * row_step
             tinted = self.tint_image(robot_img, self.COLORS[i])
-            imagebox = OffsetImage(tinted, zoom=legend_zoom)   # small enough to fit a row nicely
+            imagebox = OffsetImage(tinted, zoom=legend_zoom)
             box = AnnotationBbox(imagebox, (x, y), frameon=False, annotation_clip=False)
             self.ax.add_artist(box)
             # name under each robot
@@ -400,9 +408,9 @@ class Illustrator:
         for i in range(self.n_robots):
             row = i // per_row
             col = i % per_row
-            x = 3 + col * 7
-            y = -4.2 - row * row_step
-            lbl = self.ax.text(x, y - name_gap - 0.9, '0',
+            x = col_start + col * col_step
+            y = -4.2*s - row * row_step
+            lbl = self.ax.text(x, y - name_gap - 0.9*s, '0',
                                ha='center', va='top', fontsize=name_fontsize - 1,
                                color='black', fontweight='bold', clip_on=False,
                                bbox=dict(facecolor='#FFD700', edgecolor='none',
