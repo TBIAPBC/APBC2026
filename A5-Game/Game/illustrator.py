@@ -22,6 +22,16 @@ def _animation_path(path):
     return path
 
 
+def get_walls(m):
+    walls = [
+        (x, y)
+        for y, row in enumerate(m._data)
+        for x, tile in enumerate(row)
+        if str(tile) == '#'
+    ]
+    return walls
+
+
 class Illustrator:
     def __init__(self, m, vizfile, framerate, theme='default'):
         self.robotspos = []
@@ -32,12 +42,15 @@ class Illustrator:
         self.goldamount = []
         self.minepos = []
         self.minetime = []
+        self.bg_images = []
+        self.bg_actor = None
         self.width = m.width
         self.height = m.height
         self.markersize = (200*900)/(self.width*self.height)
         self.linewidth = (7*900)/(self.width*self.height)
 
-        self.find_walls(m)
+        # self.start_walls = get_walls(m)
+        self.wall_history = {0: get_walls(m)}
 
         self.FRAME_PER_SECOND = framerate
         self.vizfile = _animation_path(vizfile) if vizfile else vizfile
@@ -119,13 +132,6 @@ class Illustrator:
         }
     }
 
-    def find_walls(self, m):
-        self.walls = [
-            (x, y)
-            for y, row in enumerate(m._data)
-            for x, tile in enumerate(row)
-            if str(tile) == '#'
-        ]
 
     def _add_robots(self, robots):
         self.n_robots = len(robots)
@@ -187,6 +193,12 @@ class Illustrator:
         self.minepos.append(minepos)
         self.minetime.append(list(mines.values()))
 
+
+    def map_changes(self, r, m):
+        """Trigger map change
+        """
+        self.wall_history[r] = get_walls(m)
+
     def _illustrate(self):
         per_row = 4
         rows = (self.n_robots + per_row - 1) // per_row
@@ -206,31 +218,46 @@ class Illustrator:
         fig, self.ax = plt.subplots(nrows=1, ncols=1, figsize=(fig_width, fig_height))
         fig.subplots_adjust(left=left_frac, right=right_frac, top=top_frac, bottom=legend_in / fig_height)
 
-        self.init_plot()
-        # force the axes BOX to be square (not the datalim) so walls dont draw skewed
-        self.ax.set_aspect('equal', adjustable='box')
-        self.init_walls()
 
-        # --- Draw walls only once and not at every frame to make the animation faster ---
-
-        fig.canvas.draw() # make sure walls are drawn
-        extent = self.ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-        # safe area inside the axis as png, use a temp file so we dont leave artifacts behind
+        current_walls = None
+        last_bg = None
         import tempfile
-        bg_fd, bg_path = tempfile.mkstemp(suffix='.png')
-        os.close(bg_fd)
-        plt.savefig(bg_path, dpi=200, bbox_inches=extent)
+
+        for r in range(self.n_rounds):
+            changed = False
+            if r in self.wall_history:
+                current_walls = self.wall_history[r]
+                changed = True
+            if not changed:
+                self.bg_images.append(last_bg)
+            else:
+                self.ax.cla()
+                self.init_plot()
+                self.ax.set_aspect('equal', adjustable='box')
+                self.init_walls(current_walls)
+                fig.canvas.draw() # make sure walls are drawn
+                extent = self.ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+                # safe area inside the axis as png, use a temp file so we dont leave artifacts behind
+                bg_fd, bg_path = tempfile.mkstemp(suffix='.png')
+                os.close(bg_fd)
+                plt.savefig(bg_path, dpi=200, bbox_inches=extent)
+                last_bg = plt.imread(bg_path)
+                try:
+                    os.remove(bg_path)   # clean up, we already have it in memory
+                except OSError:
+                    pass
+
+                self.bg_images.append(last_bg)
+
+
+
+
 
         self.ax.cla()
         self.init_plot()  # restore axis limits
         self.ax.set_aspect('equal', adjustable='box')   # axes box stays square after cla
         # paste backround image as background
-        bg_img = plt.imread(bg_path)
-        try:
-            os.remove(bg_path)   # clean up, we already have it in memory
-        except OSError:
-            pass
-        self.ax.imshow(bg_img, extent=[-0.5, self.width-0.5, -0.5, self.height-0.5],
+        self.bg_actor = self.ax.imshow(self.bg_images[0], extent=[-0.5, self.width-0.5, -0.5, self.height-0.5],
                     origin='upper', zorder=0)
         # explicitly restore limits in case imshow changed them
         self.ax.set_ylim(top=self.height-0.5, bottom=-0.5)
@@ -272,13 +299,13 @@ class Illustrator:
 
         self.ax.set_aspect('equal', adjustable='box') # keep cells square no matter the figure shape
 
-    def init_walls(self):
-        wall_set = set(self.walls)
+    def init_walls(self, walls):
+        wall_set = set(walls)
 
         # find all diagonal gaps (unchanged)
         gap_x, gap_y = [], []
         seen_gaps = set()
-        for (x, y) in self.walls:
+        for (x, y) in walls:
             for dx, dy in [(1,1),(1,-1),(-1,1),(-1,-1)]:
                 diagonal = (x+dx, y+dy)
                 if diagonal in wall_set:
@@ -301,7 +328,7 @@ class Illustrator:
 
         # draw each wall as a 1x1 rectangle centered on its grid cell
         # Rectangle uses bottom-left corner, so shift by -0.5
-        for (x, y) in self.walls:
+        for (x, y) in walls:
             rect = Rectangle((x - 0.5, y - 0.5), 1, 1,
                             facecolor=face, edgecolor=edge,
                             linewidth=edge_lw, zorder=2)
@@ -310,7 +337,7 @@ class Illustrator:
         # PNG overlay for themed mode (unchanged)
         if self.theme['wall_image'] is not None:
             wall_img = plt.imread(self.theme['wall_image'])
-            for (x, y) in self.walls:
+            for (x, y) in walls:
                 imagebox = OffsetImage(wall_img, zoom=float(self.theme['zoom']))
                 box = AnnotationBbox(imagebox, (x, y), frameon=False)
                 self.ax.add_artist(box)
@@ -511,6 +538,9 @@ class Illustrator:
 
         if not (i+1) % 10:
             print('illustrating step', i+1)
+
+
+        self.bg_actor.set_data(self.bg_images[i])
 
         # counter, top left
         title = 'Counter: ' + str(i+1)

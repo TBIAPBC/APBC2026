@@ -21,6 +21,7 @@ def main():
     parser.add_argument('--map', help="specify map file", type=str,default=None)
     parser.add_argument('--mine_mode', help="specify what mines do. Options are wall, scramble and damage", type=str, default="wall")
     parser.add_argument('--allow_jumps', help="allow players to jump over walls by running into the same direction twice", action=argparse.BooleanOptionalAction)
+    parser.add_argument('--runningMaze', help="enable running maze mode", action=argparse.BooleanOptionalAction)
     parser.add_argument('--theme', type=str, default='default',choices=['default', 'desert', 'forest', 'garden', 'island'])
     parser.add_argument('--pov',  help="filename prefix for pov vizualization. The corresponding player number will always be appended to this prefix", type=str)
     parser.add_argument('-p', '--podium', help="display the podium at the end of the game", action=argparse.BooleanOptionalAction)
@@ -73,7 +74,7 @@ def main():
             p.player_modname = name
             sim.add_player(p)
 
-    sim.play(rounds=args.number, jumps_allowed=args.allow_jumps, mine_mode=args.mine_mode.lower(), show_podium=args.podium)
+    sim.play(rounds=args.number, jumps_allowed=args.allow_jumps, mine_mode=args.mine_mode.lower(), show_podium=args.podium, running_maze=args.runningMaze)
 
     if args.stats is not None:
         # args.stats == '' means flag present without value -> all plots

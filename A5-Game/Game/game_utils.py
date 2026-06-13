@@ -296,6 +296,8 @@ class GameParameters(object):
 
 		self.mineExpiryTime = 3 # how many rounds do mines exist
 
+		self.runningMazeCD = 10 # How many rounds to trigger map change
+
 		self._cost = [0]
 
 	# the cost of actions

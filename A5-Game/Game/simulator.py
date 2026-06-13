@@ -82,7 +82,7 @@ class Simulator(object):
 		# duplicate the public status object in the player object
 		p.status = self._pubStat[-1]
 
-	def play(self, *, rounds, mine_mode, jumps_allowed=False, show_podium=False):
+	def play(self, *, rounds, mine_mode, jumps_allowed=False, show_podium=False, running_maze=False):
 		rounds = int(rounds)
 		self.mine_mode = mine_mode
 		self.jumps_allowed = jumps_allowed
@@ -145,6 +145,9 @@ class Simulator(object):
 			self.illustrator.append_mines(getattr(self,'_mines',{}))
 			if self.pov_recorder.prefix:
 				self.pov_recorder.record_round(self._players, self._goldPots)
+
+			if running_maze:
+				self._running_maze(r)
 			
 		print("=" * 80)
 		print("Final board:")
@@ -218,6 +221,34 @@ class Simulator(object):
 			print(self)
 		for p in self._players:
 			p.round_begin(r)
+
+	def _running_maze(self, r):
+		"""Map changes
+		If map changes around a player, map around player with more gold changes too
+		"""
+		if r == 0 or r % self.params.runningMazeCD != 0:
+			return
+
+		total_gold = 0
+		p_golds = []
+		for pId in range(len(self._players)):
+			total_gold += self._status[pId].gold
+			p_golds.append((self._status[pId].gold, pId))
+
+		p_golds.sort()
+
+		mapChanged = False
+		trigger = False
+		for _, pId in p_golds:
+			t = random.random()
+			s = self._status[pId]
+			if (not trigger) and (t > s.gold / total_gold):
+				continue
+			trigger = True
+			mapChanged |= self._scramble_walls(s.x, s.y)
+
+		if mapChanged:
+			self.illustrator.map_changes(r, self.map)
 
 	def _increase_health(self, pId, amount):
 		self._status[pId].health = min(self.params.maxHealth, 
@@ -669,9 +700,10 @@ class Simulator(object):
 					rerun = True
 		
 			if not rerun:
-				return
+				return True
 
 		print("Mine scramble not successful after 10 attempts, resuming simulator")
+		return False
 
 
 	def _handle_healing(self, r):
