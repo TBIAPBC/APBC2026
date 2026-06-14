@@ -9,58 +9,80 @@ class StalkerHunterPlayer(Player):
     Adaptive gold-chasing bot with three strategies that activate in sequence.
 
     Strategies:
-        blind_chaser  — default; sprints aggressively for every pot.
+        blind_chaser  — default; BFS to chase gold, check competitor paths,
+                        and decide whether to chase, wait, or retreat to center.
         camping       — activates after LOSING_STREAK_THRESHOLD consecutive
                         losing pots; stalks the gold and grabs at the last moment.
         rivalry       — activates if camping also fails over STRATEGY_PATIENCE pots;
-                        competes directly using full ETA-based sprint calculations.
+                        competes directly using ETA-based sprint calculations.
 
     Transitions:
-        blind_chaser → rivalry    if the bot has spent 500 rounds in blind_chaser
-                                  and is no longer in 1st place.
-        blind_chaser → camping    after 3 consecutive losing pots, or immediately
-                                  if a single round causes a 2-rank drop.
+        blind_chaser → rivalry    if BLIND_CHASER_MAX_ROUNDS is exceeded and
+                                  the bot is no longer in 1st place.
+        blind_chaser → camping    after LOSING_STREAK_THRESHOLD consecutive losing
+                                  pots, or immediately on a RANK_DROP_CAMPING_TRIGGER
+                                  rank drop in a single round.
         camping      → rivalry    if average rank over STRATEGY_PATIENCE pots
-                                  remains at or below LOSING_RANK_THRESHOLD.
-        camping      → rivalry    emergency override if score gap to leader exceeds
-                                  RIVALRY_SCORE_MARGIN (is_forced_rivalry).
+                                  stays at or below LOSING_RANK_THRESHOLD.
+        camping      → rivalry    emergency override when score gap to leader
+                                  exceeds RIVALRY_SCORE_MARGIN (is_forced_rivalry).
 
     Fallback when not chasing:
-        - If a path to gold exists but was declined: move to spawn-positioning
-          target (opposite side of map from current gold, near center).
-        - If no path to gold exists at all (blind_chaser only): explore toward
-          the nearest frontier tile bordering unknown map area.
-        Fallback targets are locked for the entire pot lifetime to prevent
-        oscillation from round-to-round re-evaluation.
+        - camping / rivalry: move to a spawn-positioning target on the opposite
+          side of the map from the current gold, near the center.
+        - blind_chaser: retreat toward the map center, then explore frontiers.
     """
 
-    DEFAULT_WALK_SPEED = 2.0
-    DEFAULT_SPRINT_SPEED = 6.0
-    DEFAULT_SPRINT_RANGE = 6.0
+    # ---- Movement & Speed ----
+    DEFAULT_WALK_SPEED = 3.0
+    DEFAULT_SPRINT_SPEED = 7.0
+    DEFAULT_SPRINT_RANGE = 7.0
+    DEFAULT_AVERAGE_SPEED = 3.0
 
-    HIGH_BUDGET_THRESHOLD = 100
-    MIN_PROFIT_NORMAL = 30
+    # ---- Economy & Profit Margins ----
+    MIN_PROFIT_NORMAL = 10
     MIN_PROFIT_RIVALRY = 0
+    MAX_ATTRIBUTED_COST_DIST = 7
 
+    # ---- Pathing & Distance Checks ----
     GOLD_PATH_FACTOR = 2.0
     GOLD_PATH_BONUS = 5
+    ENEMY_DISTANCE_CUTOFF = 2
 
+    # ---- Sprint Action Moves ----
+    NORMAL_BUDGET_DEFAULT_MOVES = 3
+    RIVALRY_ETA_SAFETY_MARGIN = 1.0
+
+    # ---- Strategy Triggers & Escalation ----
+    LOSING_RANK_THRESHOLD = 2
+    LOSING_STREAK_THRESHOLD = 2
+    STRATEGY_PATIENCE = 4
+    BLIND_CHASER_MAX_ROUNDS = 350
+    RANK_DROP_CAMPING_TRIGGER = 2
     RIVALRY_SCORE_MARGIN = 100
     RIVALRY_MAX_RANK = 1
 
+    # ---- Recovery Mode ----
+    RECOVERY_LOW_THRESHOLD = 30
+    RECOVERY_HIGH_THRESHOLD = 50
+
+    # ---- Camping & Stalking Behavior ----
     STALK_DISTANCE = 1
+    MAX_STALK_MOVES = 3
 
-    LOSING_RANK_THRESHOLD = 3
-    LOSING_STREAK_THRESHOLD = 3
-    STRATEGY_PATIENCE = 5
+    # ---- Fallback & Positioning Weights ----
+    FALLBACK_CURRENT_POS_WEIGHT = 0.4
+    FALLBACK_FREE_NEIGHBOR_WEIGHT = 1.0
+    FRONTIER_GOLD_DIST_WEIGHT = 0.5
+    FALLBACK_MOVES = 2
 
-    UNWINNABLE_ETA_RATIO = 0.7
-    UNWINNABLE_DISTANCE_RATIO = 1
-
-    DISTANCE_CUTOFF = 0.90
-    LEADER_HISTORY_MAX_AGE = 5
+    # ---- Tracking & Health ----
+    LOW_HEALTH_THRESHOLD = 30
+    LEADER_HISTORY_MAX_AGE = 200
+    STALENESS_PENALTY_WEIGHT = 0.5
 
     def reset(self, player_id, max_players, width, height):
+        """Initialise all per-game state. Called once before each game starts."""
         self.player_name = "StalkerHunter"
         self.ourMap = Map(width, height)
         self.current_enemies = set()
@@ -80,12 +102,14 @@ class StalkerHunterPlayer(Player):
         self.pot_abandoned = False
 
         self.active_strategy = "blind_chaser"
+        self.pre_recovery_strategy = None
         self.blind_chaser_rounds = 0
 
         self.pot_gold_id = None
         self.pot_rank_at_spawn = None
         self.pot_score_at_spawn = 0
         self.pot_was_unwinnable = False
+        self.pot_spawn_round = 0
 
         self.losing_streak = 0
         self.last_round_rank = None
@@ -94,27 +118,29 @@ class StalkerHunterPlayer(Player):
         self.camping_rank_sum = 0
 
     def round_begin(self, r):
+        """Track the current round number and increment blind_chaser round counter."""
         self.current_round = r
         if self.active_strategy == "blind_chaser":
             self.blind_chaser_rounds += 1
 
     def set_mines(self, status):
+        """No mine placement — returns an empty list."""
         return []
 
     # ---- Map helpers ----
 
     def in_bounds(self, x, y):
-        """True if (x, y) lies within the map grid."""
+        """Return True if (x, y) is within the map boundaries."""
         return 0 <= x < self.ourMap.width and 0 <= y < self.ourMap.height
 
     def is_known_free(self, x, y):
-        """True if (x, y) is in bounds and confirmed empty."""
+        """Return True if (x, y) is in bounds and confirmed empty on the remembered map."""
         if not self.in_bounds(x, y):
             return False
         return self.ourMap[x, y].status == TileStatus.Empty
 
     def direction_from_to(self, start_x, start_y, target_x, target_y):
-        """Return the Direction enum value for a single-step move from start to target, or None."""
+        """Convert two adjacent coordinates into the corresponding Direction enum value."""
         dx, dy = target_x - start_x, target_y - start_y
         for direction in D:
             dir_x, dir_y = direction.as_xy()
@@ -123,7 +149,7 @@ class StalkerHunterPlayer(Player):
         return None
 
     def count_known_free_neighbors(self, position):
-        """Return the number of confirmed-empty tiles adjacent to position."""
+        """Return the number of confirmed-empty tiles directly adjacent to position."""
         x, y = position
         return sum(
             1 for d in D
@@ -134,14 +160,12 @@ class StalkerHunterPlayer(Player):
 
     def shortest_path(self, start, goal):
         """
-        BFS over known-free tiles from start to goal.
+        BFS over the remembered map from start to goal.
 
-        Enemy tiles are treated as blocked for intermediate steps but not for
-        the goal itself, allowing the bot to path toward a gold tile that an
-        enemy is standing on.
-
-        Returns a list of (x, y) positions including start and goal,
-        or None if no path exists through currently known tiles.
+        Intermediate tiles must be confirmed empty. The goal tile may be entered
+        as long as it is not a known wall. Enemy-occupied tiles are bypassed unless
+        they are the goal. Returns a list of (x, y) positions including start and
+        goal, or None if no path exists.
         """
         queue = deque([start])
         came_from = {start: None}
@@ -181,7 +205,11 @@ class StalkerHunterPlayer(Player):
         return path
 
     def get_visible_enemy_paths(self, status, target):
-        """Return a list of (player_id, path) for every visible enemy that has a path to target."""
+        """
+        Return a list of (player_id, path) pairs for every currently visible enemy,
+        where path is the shortest known path from that enemy to target.
+        Enemies with no reachable path are omitted.
+        """
         paths = []
         for other in status.others:
             if other is None:
@@ -193,10 +221,11 @@ class StalkerHunterPlayer(Player):
 
     def safe_path_to_moves(self, path, max_moves, enemy_paths):
         """
-        Convert a planned path into a move list, stopping early if any future
-        tile would be reached by an enemy at the same time or sooner.
+        Convert a planned path into a list of Direction values, stopping early
+        if a future tile would be reached by an enemy before us.
 
-        Returns a (possibly empty) list of Direction values.
+        Contestation is checked per step: if any enemy path passes through the
+        next tile at an earlier arrival time than ours, movement stops.
         """
         moves = []
         path_to_walk = path[1:]
@@ -207,7 +236,7 @@ class StalkerHunterPlayer(Player):
             my_arrival_time = i + 1
 
             contested = any(
-                next_node in e_path and e_path.index(next_node) <= my_arrival_time
+                next_node in e_path and e_path.index(next_node) < my_arrival_time
                 for _, e_path in enemy_paths
             )
             if contested:
@@ -228,9 +257,12 @@ class StalkerHunterPlayer(Player):
 
     def update_enemy_tracker(self, status, gold_pos=None):
         """
-        Update per-enemy history with current position and observed max burst distance.
-        Only updates max_burst when the enemy was visible last round (rounds_unseen == 1),
-        so teleportation artefacts from off-screen reappearance don't inflate estimates.
+        Update per-enemy history with both macro (average speed) and micro
+        (burst/sprint capability) tracking.
+
+        Macro data drives Rivalry ETA estimates. Micro data drives Camping
+        snatch-prevention checks. Sprint streaks are reset when an enemy
+        breaks line of sight for more than one round.
         """
         for other in status.others:
             if other is None:
@@ -241,8 +273,14 @@ class StalkerHunterPlayer(Player):
             if enemy_id not in self.enemy_history:
                 self.enemy_history[enemy_id] = {
                     "last_position": current_position,
-                    "max_burst": self.DEFAULT_SPRINT_SPEED,
+                    "sprint_speed": self.DEFAULT_SPRINT_SPEED,
+                    "walk_speed": self.DEFAULT_WALK_SPEED,
+                    "max_sprint_rounds": 1,
+                    "current_sprint_streak": 0,
                     "last_seen_round": self.current_round,
+                    "total_distance": 0.0,
+                    "total_rounds_seen": 0,
+                    "average_speed": self.DEFAULT_AVERAGE_SPEED,
                 }
             else:
                 hist = self.enemy_history[enemy_id]
@@ -251,43 +289,68 @@ class StalkerHunterPlayer(Player):
                     abs(current_position[0] - last_position[0]),
                     abs(current_position[1] - last_position[1]),
                 )
-                if distance_moved > hist.get("max_burst", 0):
-                    hist["max_burst"] = distance_moved
+
+                if self.current_round - hist["last_seen_round"] == 1:
+                    hist["total_distance"] += distance_moved
+                    hist["total_rounds_seen"] += 1
+                    hist["average_speed"] = hist["total_distance"] / hist["total_rounds_seen"]
+
+                    if distance_moved > self.DEFAULT_WALK_SPEED:
+                        hist["sprint_speed"] = max(hist["sprint_speed"], distance_moved)
+                        hist["current_sprint_streak"] += 1
+                        hist["max_sprint_rounds"] = max(hist["max_sprint_rounds"], hist["current_sprint_streak"])
+                    elif distance_moved > 0:
+                        hist["walk_speed"] = max(hist["walk_speed"], distance_moved)
+                        hist["current_sprint_streak"] = 0
+                else:
+                    hist["current_sprint_streak"] = 0
+
                 hist["last_position"] = current_position
                 hist["last_seen_round"] = self.current_round
 
-    def calculate_enemy_eta(self, enemy_id, enemy_distance):
+    def calculate_enemy_eta_burst(self, enemy_id, enemy_distance):
         """
-        Estimate rounds for enemy to reach a tile at enemy_distance steps away.
+        Estimate how many rounds an enemy needs to cover enemy_distance using
+        their observed maximum burst (sprint) capability.
 
-        Assumes the enemy sprints their observed max_burst tiles at DEFAULT_SPRINT_SPEED,
-        then walks the remainder at DEFAULT_WALK_SPEED.
+        Used by the Camping strategy for short-range snatch-prevention decisions.
         """
         hist = self.enemy_history.get(enemy_id, {})
-        max_burst = hist.get("max_burst", self.DEFAULT_SPRINT_SPEED)
+        sprint_speed = hist.get("sprint_speed", self.DEFAULT_SPRINT_SPEED)
+        walk_speed = hist.get("walk_speed", self.DEFAULT_WALK_SPEED)
+        max_sprint_rounds = hist.get("max_sprint_rounds", 1)
 
-        if enemy_distance <= max_burst:
-            return enemy_distance / self.DEFAULT_SPRINT_SPEED
-        walk_dist = enemy_distance - max_burst
-        return (max_burst / self.DEFAULT_SPRINT_SPEED) + (walk_dist / self.DEFAULT_WALK_SPEED)
+        max_sprint_distance = sprint_speed * max_sprint_rounds
+        if enemy_distance <= max_sprint_distance:
+            return enemy_distance / max(1, sprint_speed)
+
+        walk_dist = enemy_distance - max_sprint_distance
+        return (max_sprint_distance / max(1, sprint_speed)) + (walk_dist / max(1, walk_speed))
+
+    def calculate_enemy_eta_average(self, enemy_id, enemy_distance):
+        """
+        Estimate how many rounds an enemy needs to cover enemy_distance using
+        their observed long-term average speed.
+
+        Used by the Rivalry strategy and score-attribution for macro-level ETAs.
+        """
+        hist = self.enemy_history.get(enemy_id, {})
+        avg_speed = hist.get("average_speed", self.DEFAULT_AVERAGE_SPEED)
+        return enemy_distance / max(1.0, avg_speed)
 
     # ---- Score estimation ----
 
     def _attribute_pot(self, pot_pos, pot_value, status):
         """
-        Attribute a disappeared pot to the most likely grabber.
+        Infer which enemy collected a gold pot that has just disappeared.
 
-        Priority:
-            1. Our gold increased since pot spawn → we grabbed it; return (None, 0)
-               so the caller skips enemy attribution.
-            2. A visible enemy is standing on the pot tile → certain grab.
-            3. Build an ETA-ranked candidate list from all enemies with history,
-               including off-screen players using their last known position plus
-               a staleness penalty of 0.5 rounds per unseen round.
-            4. If no candidates exist, split the value evenly across all enemies
-               so gold is not silently lost from the shadow scoreboard.
+        First checks if we collected it ourselves (gold increased). Then looks
+        for an enemy standing on the exact pot position. Finally falls back to
+        ranking all known enemies by estimated ETA to the pot location and
+        crediting the fastest one, adjusted for movement cost.
 
-        Returns (winner_id, net_profit) or (None, 0) if we grabbed it.
+        Returns (winner_player_id, estimated_profit) or (None, 0) if attribution
+        fails.
         """
         our_gold_before = (self.pot_score_at_spawn if self.pot_gold_id == pot_pos
                            else self.estimated_scores[self.player_id])
@@ -323,8 +386,8 @@ class StalkerHunterPlayer(Player):
                 abs(start_pos[0] - pot_pos[0]) + abs(start_pos[1] - pot_pos[1])
             )
 
-            eta = self.calculate_enemy_eta(pid, dist) + staleness * 0.5
-            cost = status.params.cost(min(dist, 3))
+            eta = self.calculate_enemy_eta_average(pid, dist) + staleness * self.STALENESS_PENALTY_WEIGHT
+            cost = status.params.cost(min(dist, self.MAX_ATTRIBUTED_COST_DIST))
             candidates.append((eta, pid, cost))
 
         if not candidates:
@@ -341,11 +404,11 @@ class StalkerHunterPlayer(Player):
 
     def update_shadow_scoreboard(self, status):
         """
-        Maintain estimated scores for all players each round.
+        Update estimated scores for all players each round.
 
-        Tracks pot appearances and disappearances; attributes disappeared pots
-        via _attribute_pot. Our own score is always overwritten with the ground-truth
-        value from status.gold. Also updates leader_id and leader_score.
+        Detects pots that disappeared since the last round and attributes them
+        via _attribute_pot. Always syncs our own score from the live status.
+        Also refreshes leader_id and leader_score.
         """
         if status.goldPots:
             for loc, amount in status.goldPots.items():
@@ -371,7 +434,7 @@ class StalkerHunterPlayer(Player):
                 self.leader_id = pid
 
     def get_my_rank(self):
-        """Return our current rank (1 = first place) based on estimated scores."""
+        """Return our current rank (1 = leading) based on estimated scores."""
         sorted_scores = sorted(self.estimated_scores.items(), key=lambda x: x[1], reverse=True)
         for i, (pid, _) in enumerate(sorted_scores):
             if pid == self.player_id:
@@ -379,84 +442,114 @@ class StalkerHunterPlayer(Player):
         return self.max_players
 
     def is_forced_rivalry(self, current_gold):
-        """True if we are dangerously behind the leader and should override camping with rivalry."""
+        """
+        Return True if the score gap to the leader is large enough to force
+        rivalry mode even while the camping strategy is nominally active.
+        """
         return (self.get_my_rank() <= self.RIVALRY_MAX_RANK and
                 self.leader_score - current_gold > self.RIVALRY_SCORE_MARGIN)
 
-    # ---- Winnability ----
-
-    def is_pot_winnable(self, our_dist, enemy_paths, params):
-        """
-        False if any visible enemy is both faster and closer than us at full sprint.
-
-        An enemy disqualifies the pot when their ETA is below UNWINNABLE_ETA_RATIO
-        of our full-sprint ETA AND their path is at most our distance (structurally
-        closer). Requiring both conditions avoids false negatives from fast-but-far
-        enemies and false positives from slow-but-close ones.
-        """
-        if our_dist is None or our_dist == float('inf'):
-            return False
-
-        our_sprint_eta = our_dist / self.DEFAULT_SPRINT_SPEED
-
-        for enemy_id, enemy_path in enemy_paths:
-            enemy_dist = len(enemy_path) - 1
-            enemy_eta = self.calculate_enemy_eta(enemy_id, enemy_dist)
-            if (enemy_eta < our_sprint_eta * self.UNWINNABLE_ETA_RATIO and
-                    enemy_dist * self.UNWINNABLE_DISTANCE_RATIO <= our_dist):
-                return False
-
-        return True
-
     # ---- Strategy state machine ----
+
+    def _set_strategy(self, new_strategy):
+        """Switch to new_strategy if it differs from the current active strategy."""
+        if self.active_strategy != new_strategy:
+            self.active_strategy = new_strategy
+
+    def _enter_recovery(self):
+        """Pause the current strategy and switch to recovery mode."""
+        if self.active_strategy != "recovery":
+            self.pre_recovery_strategy = self.active_strategy
+            self._set_strategy("recovery")
+
+    def _exit_recovery(self):
+        """
+        Resume the strategy that was active before recovery began.
+
+        If the previous strategy was blind_chaser, escalate directly to camping
+        to avoid re-entering a strategy that already failed at low gold.
+        Resets streak and patience counters so the resumed strategy starts fresh.
+        """
+        resume = self.pre_recovery_strategy or "blind_chaser"
+        if resume == "blind_chaser":
+            resume = "camping"
+        self.pre_recovery_strategy = None
+        self._set_strategy(resume)
+        self.last_round_rank = self.get_my_rank()
+        self.losing_streak = 0
+        self.blind_chaser_rounds = 0
+        self.camping_pots_played = 0
+        self.camping_rank_sum = 0
 
     def _on_new_pot(self, new_gold_pos, current_score, pot_is_unwinnable=False):
         """
-        Called once when a new gold pot appears.
+        Called whenever the target gold pot changes.
 
-        Resolves the previous pot: increments losing_streak or camping counters
-        based on end rank, then triggers a strategy escalation if thresholds are
-        met. Pots flagged as unwinnable at spawn are excluded from accounting so
-        a structurally bad spawn doesn't penalise a working strategy.
+        Evaluates the outcome of the previous pot (score gained, rank) and
+        advances the strategy state machine accordingly. Then resets per-pot
+        tracking variables for the new pot.
         """
         current_rank = self.get_my_rank()
 
-        if self.pot_gold_id is not None and not self.pot_was_unwinnable:
-            end_rank = current_rank
+        if self.pot_gold_id is not None:
+            score_gained = current_score - self.pot_score_at_spawn
+            won_pot = score_gained > 0
 
-            if self.active_strategy == "blind_chaser":
-                if end_rank >= self.LOSING_RANK_THRESHOLD:
-                    self.losing_streak += 1
-                else:
-                    self.losing_streak = 0
+            if not self.pot_was_unwinnable and self.active_strategy != "recovery":
+                end_rank = current_rank
 
-                if self.losing_streak >= self.LOSING_STREAK_THRESHOLD:
-                    self.active_strategy = "camping"
-                    self.losing_streak = 0
-                    self.camping_pots_played = 0
-                    self.camping_rank_sum = 0
-
-            elif self.active_strategy == "camping":
-                self.camping_pots_played += 1
-                self.camping_rank_sum += end_rank
-
-                if self.camping_pots_played >= self.STRATEGY_PATIENCE:
-                    avg_rank = self.camping_rank_sum / self.camping_pots_played
-                    if avg_rank >= self.LOSING_RANK_THRESHOLD:
-                        self.active_strategy = "rivalry"
+                if self.active_strategy == "blind_chaser":
+                    if end_rank >= self.LOSING_RANK_THRESHOLD:
+                        self.losing_streak += 1
                     else:
+                        self.losing_streak = 0
+
+                    if self.losing_streak >= self.LOSING_STREAK_THRESHOLD:
+                        self._set_strategy("camping")
+                        self.losing_streak = 0
                         self.camping_pots_played = 0
                         self.camping_rank_sum = 0
+
+                elif self.active_strategy == "camping":
+                    self.camping_pots_played += 1
+                    self.camping_rank_sum += end_rank
+
+                    if self.camping_pots_played >= self.STRATEGY_PATIENCE:
+                        avg_rank = self.camping_rank_sum / self.camping_pots_played
+                        if avg_rank >= self.LOSING_RANK_THRESHOLD:
+                            self._set_strategy("rivalry")
+                        else:
+                            self.camping_pots_played = 0
+                            self.camping_rank_sum = 0
 
         self.pot_gold_id = new_gold_pos
         self.pot_score_at_spawn = current_score
         self.pot_rank_at_spawn = current_rank
         self.pot_was_unwinnable = pot_is_unwinnable
+        self.pot_spawn_round = self.current_round
+
+    # ---- Winnability ----
+
+    def is_pot_winnable(self, our_dist, enemy_paths, params):
+        """
+        Return False if any visible enemy is within ENEMY_DISTANCE_CUTOFF tiles
+        of the pot AND closer than we are. Otherwise return True.
+        """
+        if our_dist is None or our_dist == float('inf'):
+            return False
+        for enemy_id, enemy_path in enemy_paths:
+            enemy_dist = len(enemy_path) - 1
+            if enemy_dist <= self.ENEMY_DISTANCE_CUTOFF and enemy_dist < our_dist:
+                return False
+        return True
 
     # ---- Sprint decisions ----
 
     def is_gold_path_reasonable(self, position, gold_position, path):
-        """True if the BFS path length is within GOLD_PATH_FACTOR × direct distance + bonus."""
+        """
+        Return True if the BFS path length is not an excessive detour compared
+        to the direct Chebyshev distance to the gold.
+        """
         path_length = len(path) - 1
         direct_distance = max(
             abs(gold_position[0] - position[0]),
@@ -466,43 +559,41 @@ class StalkerHunterPlayer(Player):
 
     def calculate_sprint_decision_simple(self, path_to_gold, enemy_paths, current_gold, gold_value, params):
         """
-        Sprint decision for blind_chaser.
+        Sprint decision used by the blind_chaser strategy.
 
-        Concedes only if any enemy's path is shorter than DISTANCE_CUTOFF × our distance,
-        meaning they are structurally closer. Otherwise always approaches: full sprint if
-        profitable, otherwise up to 5 walk moves.
-
-        Returns (should_chase: bool, num_moves: int).
+        Abandons the pot if an enemy is within ENEMY_DISTANCE_CUTOFF and closer
+        than us. Otherwise sprints the full distance if we can afford it and the
+        net profit exceeds MIN_PROFIT_NORMAL. Falls back to a conservative
+        NORMAL_BUDGET_DEFAULT_MOVES step if not.
         """
         distance_to_gold = len(path_to_gold) - 1
         if distance_to_gold <= 0:
             return True, 0
-
         closest_enemy_distance = min(
             (len(ep) - 1 for _, ep in enemy_paths),
             default=float("inf")
         )
-
-        if closest_enemy_distance < distance_to_gold * self.DISTANCE_CUTOFF:
+        if closest_enemy_distance <= self.ENEMY_DISTANCE_CUTOFF and closest_enemy_distance < distance_to_gold:
             return False, 0
 
         full_sprint_cost = params.cost(distance_to_gold)
-        if full_sprint_cost <= current_gold and (gold_value - full_sprint_cost) > 30:
+        if full_sprint_cost <= current_gold and (gold_value - full_sprint_cost) > self.MIN_PROFIT_NORMAL:
             return True, distance_to_gold
-
-        return True, min(5, distance_to_gold)
+        return True, min(self.NORMAL_BUDGET_DEFAULT_MOVES, distance_to_gold)
 
     def calculate_sprint_decision(self, path_to_gold, enemy_paths, current_gold, gold_value, rivalry_mode, params):
         """
-        Sprint decision for camping and rivalry strategies.
+        Full ETA-based sprint decision used by the camping and rivalry strategies.
 
-        Uses per-enemy ETA estimates to decide whether to sprint and how many moves
-        to buy. If an enemy is structurally closer and faster than our full sprint,
-        the pot is conceded. Otherwise, buys exactly enough moves to arrive one round
-        ahead of the fastest enemy, provided the expected profit meets the minimum
-        threshold for the current mode.
+        In rivalry mode, enemy ETAs are computed from average speed and the
+        distance cutoff is skipped (the ETA math handles it). In camping mode,
+        burst ETAs are used and the cutoff applies.
 
-        Returns (should_chase: bool, num_moves: int).
+        If an enemy is estimated to arrive before us at normal walk speed, the
+        method computes the minimum sprint needed to beat them by
+        RIVALRY_ETA_SAFETY_MARGIN rounds. If no enemy is threatening, a greedy
+        full sprint is attempted within DEFAULT_SPRINT_RANGE, otherwise the
+        default conservative burst is used.
         """
         distance_to_gold = len(path_to_gold) - 1
         if distance_to_gold <= 0:
@@ -513,22 +604,24 @@ class StalkerHunterPlayer(Player):
 
         for enemy_id, enemy_path in enemy_paths:
             enemy_distance = len(enemy_path) - 1
-            enemy_eta = self.calculate_enemy_eta(enemy_id, enemy_distance)
+            if rivalry_mode:
+                enemy_eta = self.calculate_enemy_eta_average(enemy_id, enemy_distance)
+            else:
+                enemy_eta = self.calculate_enemy_eta_burst(enemy_id, enemy_distance)
             if enemy_eta < fastest_enemy_eta:
                 fastest_enemy_eta = enemy_eta
             if enemy_distance < closest_enemy_distance:
                 closest_enemy_distance = enemy_distance
 
-        if closest_enemy_distance < distance_to_gold * self.DISTANCE_CUTOFF:
-            if fastest_enemy_eta < distance_to_gold / self.DEFAULT_SPRINT_SPEED:
+        if not rivalry_mode:
+            if closest_enemy_distance <= self.ENEMY_DISTANCE_CUTOFF and closest_enemy_distance < distance_to_gold:
                 return False, 0
 
         our_normal_eta = distance_to_gold / self.DEFAULT_WALK_SPEED
 
         if fastest_enemy_eta <= our_normal_eta:
-            target_eta = max(1.0, fastest_enemy_eta - 1.0)
+            target_eta = max(1.0, fastest_enemy_eta - self.RIVALRY_ETA_SAFETY_MARGIN)
             desired_moves = min(math.ceil(distance_to_gold / target_eta), distance_to_gold)
-
             sprint_cost = params.cost(desired_moves)
             eta_rounds = math.ceil(distance_to_gold / max(1, desired_moves))
             decay_penalty = eta_rounds * params.goldPerRound if params.goldDecrease else 0
@@ -539,21 +632,24 @@ class StalkerHunterPlayer(Player):
                 return True, desired_moves
             return False, 0
 
-        if current_gold > self.HIGH_BUDGET_THRESHOLD and distance_to_gold <= 5:
+        full_sprint_cost = params.cost(distance_to_gold)
+        min_profit = self.MIN_PROFIT_RIVALRY if rivalry_mode else self.MIN_PROFIT_NORMAL
+        if (distance_to_gold <= self.DEFAULT_SPRINT_RANGE
+                and full_sprint_cost <= current_gold
+                and (gold_value - full_sprint_cost) >= min_profit):
             return True, distance_to_gold
-        if current_gold > self.HIGH_BUDGET_THRESHOLD:
-            return True, 4
-        return True, min(2, distance_to_gold)
+
+        return True, min(self.NORMAL_BUDGET_DEFAULT_MOVES, distance_to_gold)
 
     # ---- Camping helpers ----
 
     def is_safe_to_wait(self, current_pos, gold_pos, status, my_dist=None):
         """
-        True if it is safe to hold position rather than grabbing the gold now.
+        Return True if it is safe to keep stalking (hovering near the pot)
+        rather than committing to a grab right now.
 
-        Unsafe when any visible enemy is within ceil(their max_burst) tiles of
-        the gold (they can one-shot it), or when any enemy's ETA is less than
-        or equal to ours (ties go to the enemy).
+        Safe means no enemy can reach the pot before we can from STALK_DISTANCE,
+        and no enemy can one-round sprint to the pot from their current position.
         """
         if my_dist is None:
             my_path = self.shortest_path(current_pos, gold_pos)
@@ -566,29 +662,22 @@ class StalkerHunterPlayer(Player):
         for other in status.others:
             if other is None:
                 continue
-
             enemy_path = self.shortest_path((other.x, other.y), gold_pos)
             enemy_dist = len(enemy_path) - 1 if enemy_path else float('inf')
-
-            max_burst = self.enemy_history.get(other.player, {}).get("max_burst", self.DEFAULT_SPRINT_SPEED)
-            if enemy_dist <= math.ceil(max_burst):
+            enemy_sprint_speed = self.enemy_history.get(other.player, {}).get("sprint_speed", self.DEFAULT_SPRINT_SPEED)
+            if enemy_dist <= enemy_sprint_speed:
                 return False
-
-            if self.calculate_enemy_eta(other.player, enemy_dist) <= my_eta:
+            if self.calculate_enemy_eta_burst(other.player, enemy_dist) <= my_eta:
                 return False
-
         return True
 
     def is_gold_in_snatch_danger(self, gold_pos, status):
         """
-        True if we should grab the gold immediately rather than waiting.
-
-        Triggers when the pot expires next round, or when any visible enemy is
-        within their burst range and has enough gold to afford the sprint.
+        Return True if the pot is about to expire or if any enemy could sprint
+        to it in one round and has enough gold to afford that sprint.
         """
         if status.goldPotRemainingRounds <= 1:
             return True
-
         for other in status.others:
             if other is None:
                 continue
@@ -596,23 +685,45 @@ class StalkerHunterPlayer(Player):
             if not enemy_path:
                 continue
             enemy_dist = len(enemy_path) - 1
-            max_burst = self.enemy_history.get(other.player, {}).get("max_burst", self.DEFAULT_SPRINT_SPEED)
-            if (enemy_dist <= max_burst and
+            enemy_sprint_speed = self.enemy_history.get(other.player, {}).get("sprint_speed", self.DEFAULT_SPRINT_SPEED)
+            if (enemy_dist <= enemy_sprint_speed and
                     self.estimated_scores.get(other.player, 100) >= status.params.cost(enemy_dist)):
                 return True
-
         return False
 
     # ---- Fallback positioning ----
 
-    def get_fallback_path(self, current_pos, gold_pos):
+    def get_fallback_path(self, current_pos):
+        """
+        Return a path toward the map center for blind_chaser fallback.
+
+        If the center tile is enemy-occupied, the closest unoccupied, non-wall
+        tile to the center is chosen instead.
+        """
+        target = self.center
+        if target in self.current_enemies:
+            best_candidate = None
+            best_dist = float('inf')
+            for x in range(self.ourMap.width):
+                for y in range(self.ourMap.height):
+                    if (x, y) in self.current_enemies or self.ourMap[x, y].status == TileStatus.Wall:
+                        continue
+                    dist = max(abs(x - self.center[0]), abs(y - self.center[1]))
+                    if dist < best_dist:
+                        best_dist = dist
+                        best_candidate = (x, y)
+            if best_candidate:
+                target = best_candidate
+        return self.shortest_path(current_pos, target)
+
+    def get_predictive_fallback_path(self, current_pos, gold_pos):
         """
         Return a path toward the best repositioning tile for the next gold spawn.
 
-        Targets a tile near the center of the map, shifted away from the current
-        gold position. Scores candidates by distance to that target, penalised
-        slightly for being far from our current position, with a bonus for open
-        tiles that offer more future movement options.
+        The target is computed on the opposite side of the map from the current
+        gold, near the center. Candidate tiles are scored by distance to that
+        target, distance from our current position, and open-ness (free neighbors).
+        Used by camping and rivalry strategies.
         """
         center_x, center_y = self.center
         gold_x, gold_y = gold_pos
@@ -629,8 +740,8 @@ class StalkerHunterPlayer(Player):
                     continue
                 score = (
                     max(abs(x - target[0]), abs(y - target[1]))
-                    + 0.4 * max(abs(x - current_pos[0]), abs(y - current_pos[1]))
-                    - 1.0 * self.count_known_free_neighbors((x, y))
+                    + self.FALLBACK_CURRENT_POS_WEIGHT * max(abs(x - current_pos[0]), abs(y - current_pos[1]))
+                    - self.FALLBACK_FREE_NEIGHBOR_WEIGHT * self.count_known_free_neighbors((x, y))
                 )
                 if score < best_score:
                     best_score = score
@@ -640,19 +751,16 @@ class StalkerHunterPlayer(Player):
 
     def get_best_frontier_target(self, pos, gold_pos):
         """
-        Return a path toward the best frontier tile (empty tile bordering unknown area).
+        Return a path to the most useful unexplored frontier tile.
 
-        Used by blind_chaser when no path to gold exists, to explore the map toward
-        the gold's direction. Scores frontiers by path distance plus half the Chebyshev
-        distance to gold. Stable (x, y) tiebreaking prevents oscillation between
-        equal-scoring tiles.
-
-        Returns a path list or None if no frontier is reachable.
+        Frontier tiles are confirmed-empty tiles that border at least one unknown
+        tile. Candidates are scored by path length plus a weighted penalty for
+        distance to the current gold, so exploration still drifts toward the action.
         """
         frontiers = []
         for x in range(self.ourMap.width):
             for y in range(self.ourMap.height):
-                if self.ourMap[x, y].status != TileStatus.Empty:
+                if self.ourMap[x, y].status != TileStatus.Empty or (x, y) in self.current_enemies:
                     continue
                 for d in D:
                     dx, dy = d.as_xy()
@@ -668,36 +776,41 @@ class StalkerHunterPlayer(Player):
             if path is None or len(path) < 2:
                 continue
             dist_to_gold = max(abs(gold_pos[0] - frontier[0]), abs(gold_pos[1] - frontier[1]))
-            score = (len(path) - 1 + 0.5 * dist_to_gold, frontier[0], frontier[1])
+            score = (len(path) - 1 + self.FRONTIER_GOLD_DIST_WEIGHT * dist_to_gold, frontier[0], frontier[1])
             if score < best_score:
                 best_score = score
                 best_path = path
 
         return best_path
 
-    # ---- Main  ----
+    # ---- Main orchestrator ----
 
     def move(self, status):
         """
-        Called every round. Returns a list of Direction values to execute.
+        Main decision method called every round.
 
-        Round structure:
-            1. Update shadow scoreboard and map memory.
-            2. Detect new gold pot; call _on_new_pot to resolve previous pot and
-               advance strategy state machine.
-            3. Check for immediate drops in rank to handle emergency transitions.
-            4. Phase 1 — Gold pursuit: run the active strategy's chase logic.
-               If declined, set pot_abandoned so the decision doesn't flip next round.
-            5. Phase 2/3 — Fallback: move to a locked spawn-positioning target
-               (or frontier tile if no path to gold exists and strategy is blind_chaser).
-               Target is locked for the entire pot lifetime.
-            6. Phase 4 — Convert planned path to collision-safe move list.
+        Execution order:
+          1. Update shadow scoreboard and abort if no gold is visible.
+          2. Detect a new gold pot and run strategy-transition logic.
+          3. Update the remembered map with newly visible tiles.
+          4. Return early if health is too low to act.
+          5. Refresh enemy positions and tracking history.
+          6. Check recovery mode entry/exit.
+          7. Resolve the effective strategy (including forced-rivalry override
+             and blind_chaser timeout/rank-drop triggers).
+          8. Attempt to chase the gold using strategy-specific sprint logic.
+          9. If not chasing, move to a fallback/frontier position.
+         10. Convert the chosen path to Direction moves via safe_path_to_moves.
         """
         self.update_shadow_scoreboard(status)
         if not status.goldPots:
             return []
 
-        current_gold_pos = next(iter(status.goldPots))
+        current_gold_pos = min(
+            status.goldPots.keys(),
+            key=lambda p: max(abs(status.x - p[0]), abs(status.y - p[1]))
+        )
+
         if current_gold_pos != self.pot_gold_id:
             self.pot_abandoned = False
             _our_path = self.shortest_path((status.x, status.y), current_gold_pos)
@@ -711,11 +824,11 @@ class StalkerHunterPlayer(Player):
                 if status.map[x, y].status != TileStatus.Unknown:
                     self.ourMap[x, y].status = status.map[x, y].status
 
-        if status.health < 30:
+        if status.health < self.LOW_HEALTH_THRESHOLD:
             return []
 
         current_pos = (status.x, status.y)
-        gold_pos = next(iter(status.goldPots))
+        gold_pos = current_gold_pos
 
         self.current_enemies = set()
         for other in status.others:
@@ -724,30 +837,34 @@ class StalkerHunterPlayer(Player):
 
         self.update_enemy_tracker(status, gold_pos)
 
+        if self.active_strategy != "recovery" and status.gold < self.RECOVERY_LOW_THRESHOLD:
+            self._enter_recovery()
+        elif self.active_strategy == "recovery" and status.gold >= self.RECOVERY_HIGH_THRESHOLD:
+            self._exit_recovery()
+
         effective_strategy = self.active_strategy
         if effective_strategy == "camping" and self.is_forced_rivalry(status.gold):
             effective_strategy = "rivalry"
 
         current_rank = self.get_my_rank()
-        
+
         if (self.active_strategy == "blind_chaser"
-                and self.blind_chaser_rounds >= 500
+                and self.blind_chaser_rounds >= self.BLIND_CHASER_MAX_ROUNDS
                 and current_rank > 1):
-            self.active_strategy = "rivalry"
+            self._set_strategy("rivalry")
             effective_strategy = "rivalry"
             self.losing_streak = 0
             self.camping_pots_played = 0
             self.camping_rank_sum = 0
-            
         elif (self.active_strategy == "blind_chaser"
                 and self.last_round_rank is not None
-                and current_rank - self.last_round_rank >= 2):
-            self.active_strategy = "camping"
+                and current_rank - self.last_round_rank >= self.RANK_DROP_CAMPING_TRIGGER):
+            self._set_strategy("camping")
             effective_strategy = "camping"
             self.losing_streak = 0
             self.camping_pots_played = 0
             self.camping_rank_sum = 0
-            
+
         self.last_round_rank = current_rank
 
         path_to_gold = self.shortest_path(current_pos, gold_pos)
@@ -761,8 +878,24 @@ class StalkerHunterPlayer(Player):
         if path_to_gold and not self.pot_abandoned:
             gold_value = status.goldPots[gold_pos]
 
-            if effective_strategy == "blind_chaser":
-                if distance_to_gold / 5 <= status.goldPotRemainingRounds:
+            if effective_strategy == "recovery":
+                closest_enemy_distance = min(
+                    (len(ep) - 1 for _, ep in enemy_paths),
+                    default=float("inf")
+                )
+                if closest_enemy_distance > 2:
+                    chasing_gold = True
+                    best_path = path_to_gold
+                    num_moves = distance_to_gold
+                    while num_moves > 0 and status.params.cost(num_moves) > status.gold:
+                        num_moves -= 1
+                    if distance_to_gold > 0:
+                        num_moves = max(1, num_moves)
+                    else:
+                        num_moves = 0
+
+            elif effective_strategy == "blind_chaser":
+                if distance_to_gold / self.DEFAULT_AVERAGE_SPEED <= status.goldPotRemainingRounds:
                     chasing_gold, num_moves = self.calculate_sprint_decision_simple(
                         path_to_gold, enemy_paths, status.gold, gold_value,
                         params=status.params
@@ -785,17 +918,14 @@ class StalkerHunterPlayer(Player):
                         chasing_gold = True
                         best_path = path_to_gold
                         num_moves = 0
-
                     elif distance_to_gold <= self.STALK_DISTANCE:
                         chasing_gold = True
                         best_path = path_to_gold
                         num_moves = distance_to_gold if self.is_gold_in_snatch_danger(gold_pos, status) else 0
-
                     elif self.is_safe_to_wait(current_pos, gold_pos, status, my_dist=distance_to_gold):
                         chasing_gold = True
                         best_path = path_to_gold
-                        num_moves = min(2, distance_to_gold - self.STALK_DISTANCE)
-
+                        num_moves = min(self.MAX_STALK_MOVES, distance_to_gold - self.STALK_DISTANCE)
                     else:
                         chasing_gold, num_moves = self.calculate_sprint_decision(
                             path_to_gold, enemy_paths, status.gold, gold_value,
@@ -808,6 +938,9 @@ class StalkerHunterPlayer(Player):
                 self.pot_abandoned = True
 
         if not chasing_gold:
+            if effective_strategy == "recovery":
+                return []
+
             if gold_pos != self.last_gold_pos:
                 self.fallback_target = None
                 self.last_gold_pos = gold_pos
@@ -819,20 +952,25 @@ class StalkerHunterPlayer(Player):
                     self.fallback_target = None
 
             if not self.fallback_target:
-                if path_to_gold is not None:
-                    fp = self.get_fallback_path(current_pos, gold_pos)
+                if effective_strategy in ["camping", "rivalry"]:
+                    fp = self.get_predictive_fallback_path(current_pos, gold_pos)
                     if fp and len(fp) > 1:
                         self.fallback_target = fp[-1]
-                elif effective_strategy == "blind_chaser":
-                    fp = self.get_best_frontier_target(current_pos, gold_pos)
+                else:
+                    fp = self.get_fallback_path(current_pos)
                     if fp and len(fp) > 1:
                         self.fallback_target = fp[-1]
+
+                    if not self.fallback_target and effective_strategy == "blind_chaser":
+                        fp = self.get_best_frontier_target(current_pos, gold_pos)
+                        if fp and len(fp) > 1:
+                            self.fallback_target = fp[-1]
 
             if self.fallback_target:
                 path_to_fallback = self.shortest_path(current_pos, self.fallback_target)
                 if path_to_fallback and len(path_to_fallback) > 1:
                     best_path = path_to_fallback
-                    num_moves = 2
+                    num_moves = self.FALLBACK_MOVES
 
         target_node = best_path[-1] if best_path else current_pos
         collision_enemy_paths = self.get_visible_enemy_paths(status, target_node)
