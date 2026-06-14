@@ -12,6 +12,7 @@ class BasicBot(Player):
 
         def reset(self, player_id, max_players, width, height):
                 self.player_name = "GoldDigger-Bot-Basic"
+                self.img_path = "GoldDiggerBot.png"
                 self.ourMap = Map(width, height)
 
         def round_begin(self, r):
