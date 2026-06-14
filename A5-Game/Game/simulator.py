@@ -133,7 +133,6 @@ class Simulator(object):
 				round_stats = self._round_stats[pId]
 				self.stats[pId]['gold'].append(self._status[pId].gold)
 				self.stats[pId]['health'].append(self._status[pId].health)
-				self.stats[pId]['moves'].append(round_stats['moves'])
 				self.stats[pId]['wall_crashes'].append(round_stats['wall_crashes'])
 				self.stats[pId]['player_crashes'].append(round_stats['player_crashes'])
 				self.stats[pId]['mines_set'].append(round_stats['mines_set'])
@@ -590,8 +589,6 @@ class Simulator(object):
 
 		# collect statistics for this round
 		for pId in range(len(self._players)):
-			self.stats[pId]['gold'].append(self._status[pId].gold)
-			self.stats[pId]['health'].append(self._status[pId].health)
 			self.stats[pId]['moves'].append(sum(1 for m in moveStatusPerPlayer[pId] if m == MoveStatus.Done))				
 
 	def _trigger_mine(self, x, y, pId):

@@ -50,7 +50,6 @@ def main():
     robot_module_names = {
         "Test": "test-RobotRace",
         "Beatme": "beatme-RobotRace",
-        "Explorer": "explorer-RobotRace",
         "GoldDiggers": "GoldDiggers-RobotRace",
         "Adlhartm": "adlhartm-RobotRace",
     }
