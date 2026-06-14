@@ -47,7 +47,7 @@ WAIT = 8 # rounds of saving beats moving on
 class neo(Player):
 
     def reset(self, player_id, max_players, width, height):
-        self.player_name = "neo"
+        self.player_name = "D3STROYER_A"
         self.ourMap = Map(width, height)
         #print(len(self.ourMap[0]))
 
