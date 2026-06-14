@@ -28,6 +28,7 @@ MAP_SAMPLE_ROUNDS = 10  #rounds before we decide on strategy
 
 # Moves per map type
 # Open map
+#git makes me sad
 OPEN_BIG = 6    # pot > 50
 OPEN_MID = 4    # pot > 20 
 OPEN_SMALL = 2  # small pot 
