@@ -67,8 +67,9 @@ class BasicBot(Player):
                 return None
 
         def _as_directions(self,curpos,path):
-                return [self._as_direction(x,y) for x,y in zip([curpos]+path,path)]
-
+                directions = [self._as_direction(x, y) for x, y in zip([curpos] + path, path)]
+                return [d for d in directions if d is not None]
+        
         def move(self, status):
                 ourMap = self.ourMap
 
@@ -89,9 +90,19 @@ class BasicBot(Player):
                 
                 paths_to_gold = AllShortestPaths(goldLocation,ourMap)
                 bestpath = paths_to_gold.shortestPathFrom(curpos)
+
+                # try to find an alternative route avoiding current enemy positions
+                enemy_positions = set((o.x, o.y) for o in status.others if o is not None)
+                # if the shortest path would step onto an enemy, attempt an alternative
+                if any(p in enemy_positions for p in bestpath):
+                        alt = paths_to_gold.pathWithAvoidance(curpos, avoid_set=enemy_positions, max_extra=3)
+                        if alt and len(alt) <= len(bestpath) + 3:
+                                bestpath = alt
+
+
                 bestpath = self.check_path(status, bestpath, numMoves)
                 bestpath = bestpath[1:]
-                bestpath.append( goldLocation )
+                bestpath.append(goldLocation)
 
                 low_gold_mode = True if status.gold < 20 else False
                 max_rounds_to_pot = 4 if not low_gold_mode else 1
@@ -120,8 +131,10 @@ class BasicBot(Player):
                         else:
                         # otherwise wait
                                 numMoves = 0
-
-                return self._as_directions(curpos,bestpath[:numMoves])
+                moves = self._as_directions(curpos, bestpath[:numMoves])
+                if moves is None:
+                        return []
+                return moves
         
         def check_path(self, status, path, numMoves):
                 i = 0
@@ -144,9 +157,11 @@ class BasicBot(Player):
                 Output: True -> obstacle on tile, False -> tile is clear, None if we cannot see the tile
                 '''
                 tileStatus = self.ourMap[x, y].status
-                # new version: if tile is empty we go, otherwise we don't. This should hopefully detect players too
-                if tileStatus != TileStatus.Empty:
+                # old version: if tile is no wall, we go
+                if tileStatus == TileStatus.Wall:
                         return True
+                elif tileStatus == TileStatus.Unknown:
+                        return None
                 return False
                 
                 # old version: check specifically for walls and mines
