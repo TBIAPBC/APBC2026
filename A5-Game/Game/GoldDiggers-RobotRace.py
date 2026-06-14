@@ -1,3 +1,5 @@
+from turtle import distance
+
 from game_utils import Direction as D
 from game_utils import TileStatus
 from game_utils import Map
@@ -86,7 +88,6 @@ class BasicBot(Player):
                 print(status)
                 print("status"*20)
                 ## move towards gold pot
-                numMoves = 4
                 
                 paths_to_gold = AllShortestPaths(goldLocation,ourMap)
                 bestpath = paths_to_gold.shortestPathFrom(curpos)
@@ -99,38 +100,61 @@ class BasicBot(Player):
                         if alt and len(alt) <= len(bestpath) + 3:
                                 bestpath = alt
 
-
-                bestpath = self.check_path(status, bestpath, numMoves)
                 bestpath = bestpath[1:]
                 bestpath.append(goldLocation)
+                distance = max(0, len(bestpath))
+                path_known = all(self.ourMap[pos].status != TileStatus.Unknown for pos in bestpath[1:])
+                unknown_count = sum(1 for pos in bestpath if self.ourMap[pos].status == TileStatus.Unknown)
 
-                low_gold_mode = True if status.gold < 20 else False
-                max_rounds_to_pot = 4 if not low_gold_mode else 1
+                gold_value = next(iter(status.goldPots.values()))
+                low_gold_mode = status.gold < 20
+                if low_gold_mode:
+                        if distance <= 2:
+                                numMoves = min(2, distance)
+                        elif path_known and distance <= 4 and gold_value > 15:
+                                minimum_dist_move = min(4, distance)
+                                if minimum_dist_move * (minimum_dist_move + 1) // 2 <= gold_value:
+                                        numMoves = minimum_dist_move
+                                else: 
+                                        minimum_dist_move = min(3, distance)
+                                        if minimum_dist_move * (minimum_dist_move + 1) // 2 <= gold_value:
+                                                numMoves = minimum_dist_move
 
-                distance=len(bestpath)
-                #numMoves = distance
-                #TODO: also check for total remaining rounds in the game
-                if numMoves>0 and distance/numMoves > min(status.goldPotRemainingRounds, max_rounds_to_pot):
-                        # waiting mode
-                        # numMoves = 0
-                        # repositioning mode: move towards last junction to increase likelihood of finding next gold pot
-                        numMoves = 1
-                        if self.repositioning_target is not None:
-                                if curpos == self.repositioning_target:
-                                        self.repositioning_target = None
-                                        numMoves = 0
+                                        else:
+                                                minimum_dist_move = min(2, distance)
+                                                if minimum_dist_move * (minimum_dist_move + 1) // 2 <= gold_value:
+                                                        numMoves = minimum_dist_move
+                                                
+                        else:
+                                numMoves = 1
+                else:
+                        numMoves = self.choose_num_moves(status, distance, gold_value, path_known, unknown_count)
 
-                        # find all free neighbors to find out if stuck in a dead end
+                
+                if not path_known:
+                        if distance > 4:
+                                numMoves = min(numMoves, 3)
+                        elif distance > 2:
+                                numMoves = min(numMoves, 2)
+
+                # if no profitable sprint is found, try to reposition instead of waiting in place
+                if numMoves == 0:
+                        if self.repositioning_target is not None and curpos != self.repositioning_target:
+                                paths_to_junction = AllShortestPaths(self.repositioning_target, self.ourMap)
+                                bestpath = paths_to_junction.shortestPathFrom(curpos)
+                                bestpath = bestpath[1:]
+                                bestpath.append(self.repositioning_target)
+                                numMoves = 1
                         elif len(self.ourMap.nonWallNeighbours(curpos)) <= 1 and self.last_junction is not None:
                                 paths_to_junction = AllShortestPaths(self.last_junction, self.ourMap)
                                 bestpath = paths_to_junction.shortestPathFrom(curpos)
                                 bestpath = bestpath[1:]
                                 bestpath.append(self.last_junction)
                                 self.repositioning_target = self.last_junction
+                                numMoves = 1
 
-                        else:
-                        # otherwise wait
-                                numMoves = 0
+                
+                bestpath = self.check_path(status, bestpath, numMoves)
                 moves = self._as_directions(curpos, bestpath[:numMoves])
                 if moves is None:
                         return []
@@ -176,5 +200,56 @@ class BasicBot(Player):
                         if other is not None and (other.x, other.y) == pos:
                                 return True
                 return False
+        
+        def choose_num_moves(self, status, distance, gold_value, path_known=False, unknown_count=0):
+                best_num_moves = 0
+                best_score = 0
+                max_affordable = 0
+                cost = 0
+
+                while cost < status.gold:
+                        max_affordable += 1
+                        cost = max_affordable * (max_affordable + 1) // 2
+                
+                max_affordable -= 1
+                max_possible = min(distance, max_affordable)
+
+                if path_known and distance > 0 and distance <= 3:
+                        # If the path is fully known and very short, sprint with as much as we can afford.
+                        for n in range(max_possible, 0, -1):
+                                cost = n * (n + 1) // 2
+                                if cost > gold_value * 0.5:
+                                        continue
+
+                                expected_gain = gold_value - cost
+                                rounds_needed = distance / n
+                                if rounds_needed > status.goldPotRemainingRounds or expected_gain <= 0:
+                                        continue
+                                return n
+
+                for n in range(1, max_possible + 1):
+                        cost = n * (n + 1) // 2
+                        expected_gain = gold_value - cost
+
+                        # only move if we can afford it and the pot is still reachable in time
+                        rounds_needed = distance / n
+
+                        if rounds_needed > status.goldPotRemainingRounds or expected_gain <= 0:
+                                continue
+
+                        # prefer high profit, but also prefer reaching the pot sooner
+                        # if the path is not fully known, be more conservative in how much we sprint, as we might run into unexpected obstacles
+                        if not path_known and unknown_count >= 2 and n > 1:
+                                continue
+                        if path_known:
+                                score = expected_gain - rounds_needed * (4 + 2)
+                        else:
+                                score = expected_gain - rounds_needed * 4
+
+                        if score > best_score:
+                                best_score = score
+                                best_num_moves = n
+
+                return best_num_moves
 
 players = [ BasicBot()]
