@@ -47,7 +47,7 @@ WAIT = 8 # rounds of saving beats moving on
 class D3STROYER(Player):
 
     def reset(self, player_id, max_players, width, height):
-        self.player_name = "D3STROYER"
+        self.player_name = "D3STROYER_B"
         self.ourMap = Map(width, height)
 
         # position hist to detect stuck situations
