@@ -17,6 +17,8 @@ def main():
     parser.add_argument('--viz', help="filename for the visualization of the race", type=str)
     parser.add_argument('--number', help="number of rounds", type=int, default=1000)
     parser.add_argument('--density', help="map density", type=float, default=0.4)
+    parser.add_argument('-wt', '--width', help="width of map", type=int, default=30)
+    parser.add_argument('-ht', '--height', help="height of map", type=int, default=30)
     parser.add_argument('--framerate', help="specify framerate of the visualization", type=int, default=8)
     parser.add_argument('--map', help="specify map file", type=str,default=None)
     parser.add_argument('--mine_mode', help="specify what mines do. Options are wall, scramble and damage", type=str, default="wall")
@@ -59,7 +61,8 @@ def main():
     if args.map is not None:
         m = Map.read(args.map)
     else:
-        m = Map.makeRandom(30, 30, args.density)
+        # m = Map.makeRandom(30, 30, args.density)
+        m = Map.makeRandom(args.width, args.height, args.density)
 
     sim = Simulator(
         map=m,
