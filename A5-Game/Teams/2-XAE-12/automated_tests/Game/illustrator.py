@@ -12,8 +12,6 @@ class Illustrator:
         self.goldamount = []
         self.minepos = []
         self.minetime = []
-        self.robotsgold = []
-
 
         self.width = m.width
         self.height = m.height
@@ -41,13 +39,11 @@ class Illustrator:
         self.n_rounds = rounds
 
     def append_robots(self, robots):
-        rpos, rhealth, rmoney, rgold = [], [], [], []
+        rpos, rhealth, rmoney = [], [], []
         for robot in robots:
             rpos.append([robot.status.x, robot.status.y])
             rhealth.append(robot.status.health)
             rmoney.append(robot.status.gold)
-            rgold.append(robot.status.gold)  # Store actual gold amount
-
 
         maxmoney = max(rmoney)
         rmoney = [80*money/maxmoney+25 for money in rmoney]
@@ -55,7 +51,6 @@ class Illustrator:
         self.robotspos.append(rpos)
         self.robotshealth.append(rhealth)
         self.robotsmoney.append(rmoney)
-        self.robotsgold.append(rgold)    # actual gold amounts
 
     def append_goldpots(self, goldpots):
         self.goldpos.append(list(goldpots.keys()))
@@ -71,8 +66,6 @@ class Illustrator:
     def _illustrate(self):
         fig, self.ax = plt.subplots(
             nrows=1, ncols=1, figsize=(8, 8))
-        fig.subplots_adjust(top=0.9)
-
 
         self.init_plot()
         self.init_walls()
@@ -84,7 +77,7 @@ class Illustrator:
         gif = FuncAnimation(fig, self.illustrate_round,
                             self.n_rounds)
 
-        gif.save(self.vizfile, writer='ffmpeg',
+        gif.save(self.vizfile,
                  dpi=80, fps=self.FRAME_PER_SECOND)
 
     def init_plot(self):
@@ -107,13 +100,8 @@ class Illustrator:
             self.ax.plot([], [], alpha=0.5, linewidth=self.linewidth,zorder=1, label=self.robot_names[i])[0]
             for i in range(self.n_robots)
         ]
-        self.ax.legend(
-            loc='upper center',
-            bbox_to_anchor=(0.5, 1.10),
-            ncol=max(1, min(3, self.n_robots)),
-            prop=dict(size=8),
-            frameon=True,
-        )
+        self.ax.legend(loc='upper right', bbox_to_anchor=(
+            0.05, 1.15), prop=dict(size=8))
 
     def init_robots(self):
         self.robot = self.ax.scatter(
@@ -136,7 +124,7 @@ class Illustrator:
 
         # figure
         title = str(i+1)
-        self.ax.set_title(title, fontsize=20, loc='left')
+        self.ax.set_title(title, fontsize=20)
 
         # goldpots
         self.goldpots.set_offsets(self.goldpos[i])
@@ -146,14 +134,6 @@ class Illustrator:
         self.robot.set_offsets(self.robotspos[i])
         self.robot.set_sizes(self.robotsmoney[i])
         self.robot.set_array(np.array(self.robotshealth[i]))
-
-        # gold label
-        if not hasattr(self, 'gold_texts'):
-            self.gold_texts = [self.ax.text(0, 0, '', ha='left', va='center', fontsize=10, color='black', weight='bold', bbox=dict(boxstyle='round,pad=0.3', facecolor='gold', alpha=0.7)) for _ in range(self.n_robots)]
-        
-        for j, pos in enumerate(self.robotspos[i]):
-            self.gold_texts[j].set_position((pos[0] + 0.8, pos[1]))
-            self.gold_texts[j].set_text(str(int(self.robotsgold[i][j])))
 
         # mines
         self.mines.set_offsets(self.minepos[i])

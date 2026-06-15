@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import random
 
-from game_utils import nameFromPlayerId
-from game_utils import Direction as D, MoveStatus
-from game_utils import Tile, TileStatus, TileObject
-from game_utils import Map, Status
-from simulator import Simulator
-from player_base import Player
+from Game.game_utils import nameFromPlayerId
+from Game.game_utils import Direction as D, MoveStatus
+from Game.game_utils import Tile, TileStatus, TileObject
+from Game.game_utils import Map, Status
+from Game.simulator import Simulator
+from Game.player_base import Player
 
 class MyRandomPlayer(Player):
 	def reset(self, player_id, max_players, width, height):
@@ -89,7 +89,7 @@ class MyRandomPlayer(Player):
 
 class MyNonRandomPlayer(Player):
 	def reset(self, player_id, max_players, width, height):
-		self.player_name = "Test-Simly_Greedy" # nameFromPlayerId(player_id)
+		self.player_name = "NonRandom" # nameFromPlayerId(player_id)
 		self.ourMap = Map(width, height)
 
 	def round_begin(self, r):

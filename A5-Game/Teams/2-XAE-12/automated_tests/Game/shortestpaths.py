@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from collections import deque
 import copy
-from game_utils import Direction as D, MoveStatus
-from game_utils import Tile, TileStatus, TileObject
+from .game_utils import Direction as D, MoveStatus
+from .game_utils import Tile, TileStatus, TileObject
 import random
 
 import numpy as np
@@ -98,31 +98,4 @@ class AllShortestPaths:
             assert len(potentialNextXYs)>0
             xy = random.choice(potentialNextXYs)
             curdist -= 1
-        return path
-    
-    def pathWithAvoidance(self, xy, avoid_set, max_extra=3):
-        if self.dist[xy]<0:
-            return []
-
-        original_dist = self.dist[xy]
-
-        path = []
-        curdist = self.dist[xy]
-
-        while xy != self.sink:
-            path.append(xy)
-
-            potentialNextXYs = list()
-            # find preceeding neighbor
-            for neighbor in self.nonWallNeighborsIter(xy):
-                if self.dist[neighbor] ==  curdist-1 and neighbor not in avoid_set:
-                    potentialNextXYs.append(neighbor)
-            if not potentialNextXYs:
-                return None
-            xy = random.choice(potentialNextXYs)
-            curdist -= 1
-
-        if len(path) > original_dist + max_extra:
-            return None
-
         return path

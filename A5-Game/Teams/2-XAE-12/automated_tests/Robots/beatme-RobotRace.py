@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from game_utils import Direction as D
-from game_utils import TileStatus
-from game_utils import Map
-from player_base import Player
+from Game.game_utils import Direction as D
+from Game.game_utils import TileStatus
+from Game.game_utils import Map
+from Game.player_base import Player
 
-from shortestpaths import AllShortestPaths
+from Game.shortestpaths import AllShortestPaths
 
 class MyPathFindingPlayer(Player):
 
@@ -13,7 +13,7 @@ class MyPathFindingPlayer(Player):
                 self.random=random
 
         def reset(self, player_id, max_players, width, height):
-                self.player_name = "Test_PathFindingPlayer"
+                self.player_name = "SillyScout"
                 self.ourMap = Map(width, height)
 
         def round_begin(self, r):

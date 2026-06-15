@@ -1,0 +1,5 @@
+A5-Game/Game/__pycache__/*
+A5-Game/Game/*.gif
+.vscode/launch.json
+.DS_Store
+.vscode
