@@ -14,11 +14,14 @@ class BasicBot(Player):
                 self.random=random
 
         def reset(self, player_id, max_players, width, height):
-                self.player_name = "Team_1_GoldDigger"
+                self.player_name = "Team_1_GoldDigger_left"
                 self.ourMap = Map(width, height)
                 self.mine_memory = {}
                 self.last_junction = None
                 self.repositioning_target = None
+
+                self.side = "left"
+                self.home_center = (width // 4, height // 3)
 
         def round_begin(self, r):
                  #map memory
@@ -84,12 +87,24 @@ class BasicBot(Player):
                 neighbours = self.ourMap.nonWallNeighbours(curpos)
                 if len(neighbours) >= 3:
                         self.last_junction = curpos
-
-                print(status)
-                print("status"*20)
-                ## move towards gold pot
+                safe_target = self.get_safe_home_center(curpos)
                 
-                paths_to_gold = AllShortestPaths(goldLocation,ourMap)
+                if not self.is_our_side(goldLocation):
+                        safe_target = self.get_safe_home_center(curpos)
+                        if safe_target is None:
+                                return []
+                        else:
+                                paths_to_middle = AllShortestPaths(safe_target, self.ourMap)
+                                bestpath = paths_to_middle.shortestPathFrom(curpos)
+                                if bestpath and len(bestpath) > 0:
+                                        bestpath = bestpath[1:]
+                                        bestpath.append(safe_target)
+                                        numMoves = 1
+                                        bestpath = self.check_path(status, bestpath, numMoves)
+                                        moves = self._as_directions(curpos, bestpath[:numMoves])
+                                        return moves if moves is not None else []
+
+                paths_to_gold = AllShortestPaths(goldLocation, ourMap)
                 bestpath = paths_to_gold.shortestPathFrom(curpos)
 
                 # try to find an alternative route avoiding current enemy positions
@@ -139,21 +154,14 @@ class BasicBot(Player):
 
                 # if no profitable sprint is found, try to reposition instead of waiting in place
                 if numMoves == 0:
-                        if self.repositioning_target is not None and curpos != self.repositioning_target:
-                                paths_to_junction = AllShortestPaths(self.repositioning_target, self.ourMap)
-                                bestpath = paths_to_junction.shortestPathFrom(curpos)
-                                bestpath = bestpath[1:]
-                                bestpath.append(self.repositioning_target)
-                                numMoves = 1
-                        elif len(self.ourMap.nonWallNeighbours(curpos)) <= 1 and self.last_junction is not None:
-                                paths_to_junction = AllShortestPaths(self.last_junction, self.ourMap)
-                                bestpath = paths_to_junction.shortestPathFrom(curpos)
-                                bestpath = bestpath[1:]
-                                bestpath.append(self.last_junction)
-                                self.repositioning_target = self.last_junction
-                                numMoves = 1
-
-                
+                        paths_to_middle = AllShortestPaths(safe_target, self.ourMap)
+                        bestpath = paths_to_middle.shortestPathFrom(curpos)
+                        if not bestpath:
+                                return []
+                        bestpath = bestpath[1:]
+                        bestpath.append(safe_target)
+                        numMoves = 1
+        
                 bestpath = self.check_path(status, bestpath, numMoves)
                 moves = self._as_directions(curpos, bestpath[:numMoves])
                 if moves is None:
@@ -251,5 +259,22 @@ class BasicBot(Player):
                                 best_num_moves = n
 
                 return best_num_moves
+
+        def is_our_side(self, pos):
+                x, y = pos
+
+                if self.side == "left":
+                        return x <= self.ourMap.width * 0.6
+                else:
+                        return x >= self.ourMap.width * 0.4
+
+        def get_safe_home_center(self, curpos):
+                x, y = self.home_center
+                for dy in range(0, self.ourMap.height // 2, 2):
+                        for oy in (dy, -dy):
+                                ny = y + oy
+                                if 0 <= ny < self.ourMap.height and self.ourMap[x, ny].status != TileStatus.Wall:
+                                        return (x, ny)
+                return curpos
 
 players = [ BasicBot()]
