@@ -1,0 +1,806 @@
+================================================================================
+Game 1 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      461       37,12
+B D3STROYER_A     100      598       3,27
+C StalkerHunter   100      104       34,37
+D forsurewinners  100      149       10,41
+Winner: B (D3STROYER_A) with 598 gold
+================================================================================
+Game 2 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      538       5,35
+B D3STROYER_A     100      432       11,31
+C StalkerHunter   100      264       15,29
+D forsurewinners  100      112       22,41
+Winner: A (Team_1_GoldDigger) with 538 gold
+================================================================================
+Game 3 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      685       44,9
+B D3STROYER_A     100      464       3,40
+C StalkerHunter   100      148       30,35
+D forsurewinners  100      113       29,35
+Winner: A (Team_1_GoldDigger) with 685 gold
+================================================================================
+Game 4 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      797       14,36
+B D3STROYER_A     100      81        26,24
+C StalkerHunter   100      39        28,16
+D forsurewinners  100      611       38,46
+Winner: A (Team_1_GoldDigger) with 797 gold
+================================================================================
+Game 5 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      453       15,44
+B D3STROYER_A     100      308       13,31
+C StalkerHunter   100      282       37,0
+D forsurewinners  100      80        42,21
+Winner: A (Team_1_GoldDigger) with 453 gold
+================================================================================
+Game 6 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      619       46,35
+B D3STROYER_A     100      443       26,45
+C StalkerHunter   100      484       18,17
+D forsurewinners  100      52        38,6
+Winner: A (Team_1_GoldDigger) with 619 gold
+================================================================================
+Game 7 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      437       26,45
+B D3STROYER_A     100      350       13,38
+C StalkerHunter   100      107       16,30
+D forsurewinners  100      174       15,22
+Winner: A (Team_1_GoldDigger) with 437 gold
+================================================================================
+Game 8 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      348       21,36
+B D3STROYER_A     22       99        22,35
+C StalkerHunter   100      64        29,34
+D forsurewinners  100      249       10,29
+Winner: A (Team_1_GoldDigger) with 348 gold
+================================================================================
+Game 9 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      472       33,47
+B D3STROYER_A     100      1         20,12
+C StalkerHunter   100      120       37,11
+D forsurewinners  100      32        23,41
+Winner: A (Team_1_GoldDigger) with 472 gold
+================================================================================
+Game 10 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       41,33
+B D3STROYER_A     100      506       5,40
+C StalkerHunter   100      33        27,24
+D forsurewinners  100      173       21,29
+Winner: B (D3STROYER_A) with 506 gold
+================================================================================
+Game 11 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       20,1
+B D3STROYER_A     100      291       12,32
+C StalkerHunter   100      112       44,33
+D forsurewinners  100      83        26,17
+Winner: A (Team_1_GoldDigger) with 349 gold
+================================================================================
+Game 12 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      343       21,14
+B D3STROYER_A     100      399       7,40
+C StalkerHunter   100      256       21,29
+D forsurewinners  100      258       23,35
+Winner: B (D3STROYER_A) with 399 gold
+================================================================================
+Game 13 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      840       28,8
+B D3STROYER_A     100      577       3,38
+C StalkerHunter   100      1         28,23
+D forsurewinners  100      178       45,31
+Winner: A (Team_1_GoldDigger) with 840 gold
+================================================================================
+Game 14 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      1798      46,26
+B D3STROYER_A     100      567       3,46
+C StalkerHunter   100      1         17,33
+D forsurewinners  100      403       16,4
+Winner: A (Team_1_GoldDigger) with 1798 gold
+================================================================================
+Game 15 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      546       38,25
+B D3STROYER_A     100      399       8,37
+C StalkerHunter   100      85        35,37
+D forsurewinners  100      111       34,27
+Winner: A (Team_1_GoldDigger) with 546 gold
+================================================================================
+Game 16 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      338       12,4
+B D3STROYER_A     100      493       13,38
+C StalkerHunter   100      77        12,28
+D forsurewinners  100      489       13,33
+Winner: B (D3STROYER_A) with 493 gold
+================================================================================
+Game 17 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      340       10,28
+B D3STROYER_A     100      1         27,20
+C StalkerHunter   100      191       34,37
+D forsurewinners  100      451       38,21
+Winner: D (forsurewinners) with 451 gold
+================================================================================
+Game 18 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      518       39,1
+B D3STROYER_A     100      598       13,38
+C StalkerHunter   100      70        32,35
+D forsurewinners  100      132       24,24
+Winner: B (D3STROYER_A) with 598 gold
+================================================================================
+Game 19 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      343       16,44
+B D3STROYER_A     100      280       8,37
+C StalkerHunter   100      47        36,14
+D forsurewinners  100      230       24,24
+Winner: A (Team_1_GoldDigger) with 343 gold
+================================================================================
+Game 20 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      325       21,36
+B D3STROYER_A     100      315       8,37
+C StalkerHunter   100      221       16,33
+D forsurewinners  100      328       11,20
+Winner: D (forsurewinners) with 328 gold
+================================================================================
+Game 21 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      346       2,16
+B D3STROYER_A     100      499       3,40
+C StalkerHunter   100      742       48,41
+D forsurewinners  100      318       24,24
+Winner: C (StalkerHunter) with 742 gold
+================================================================================
+Game 22 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       2,3
+B D3STROYER_A     100      396       13,36
+C StalkerHunter   100      38        15,22
+D forsurewinners  100      596       46,31
+Winner: D (forsurewinners) with 596 gold
+================================================================================
+Game 23 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      345       36,36
+B D3STROYER_A     100      653       3,40
+C StalkerHunter   100      258       16,21
+D forsurewinners  100      191       24,39
+Winner: B (D3STROYER_A) with 653 gold
+================================================================================
+Game 24 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      442       41,14
+B D3STROYER_A     100      447       3,40
+C StalkerHunter   100      92        23,27
+D forsurewinners  100      65        30,35
+Winner: B (D3STROYER_A) with 447 gold
+================================================================================
+Game 25 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      558       16,47
+B D3STROYER_A     100      260       13,31
+C StalkerHunter   100      121       15,33
+D forsurewinners  100      534       43,3
+Winner: A (Team_1_GoldDigger) with 558 gold
+================================================================================
+Game 26 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       15,10
+B D3STROYER_A     100      414       13,38
+C StalkerHunter   100      97        12,17
+D forsurewinners  100      109       29,35
+Winner: B (D3STROYER_A) with 414 gold
+================================================================================
+Game 27 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       7,26
+B D3STROYER_A     100      327       13,35
+C StalkerHunter   100      175       7,10
+D forsurewinners  100      137       25,29
+Winner: A (Team_1_GoldDigger) with 349 gold
+================================================================================
+Game 28 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      953       39,6
+B D3STROYER_A     100      293       5,35
+C StalkerHunter   100      260       29,27
+D forsurewinners  100      107       14,30
+Winner: A (Team_1_GoldDigger) with 953 gold
+================================================================================
+Game 29 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      428       5,47
+B D3STROYER_A     100      273       13,31
+C StalkerHunter   100      19        16,21
+D forsurewinners  100      637       27,30
+Winner: D (forsurewinners) with 637 gold
+================================================================================
+Game 30 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      346       15,45
+B D3STROYER_A     100      428       4,30
+C StalkerHunter   100      352       43,6
+D forsurewinners  100      130       16,33
+Winner: B (D3STROYER_A) with 428 gold
+================================================================================
+Game 31 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      342       12,13
+B D3STROYER_A     100      430       13,38
+C StalkerHunter   100      55        15,29
+D forsurewinners  100      226       24,24
+Winner: B (D3STROYER_A) with 430 gold
+================================================================================
+Game 32 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      348       3,47
+B D3STROYER_A     100      292       4,30
+C StalkerHunter   100      200       16,33
+D forsurewinners  100      124       24,24
+Winner: A (Team_1_GoldDigger) with 348 gold
+================================================================================
+Game 33 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      469       7,24
+B D3STROYER_A     100      322       13,31
+C StalkerHunter   100      118       30,26
+D forsurewinners  100      85        27,12
+Winner: A (Team_1_GoldDigger) with 469 gold
+================================================================================
+Game 34 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       21,10
+B D3STROYER_A     100      310       6,30
+C StalkerHunter   100      71        9,25
+D forsurewinners  100      140       26,10
+Winner: A (Team_1_GoldDigger) with 349 gold
+================================================================================
+Game 35 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       29,42
+B D3STROYER_A     100      406       4,30
+C StalkerHunter   100      110       39,8
+D forsurewinners  100      137       24,24
+Winner: B (D3STROYER_A) with 406 gold
+================================================================================
+Game 36 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      320       10,20
+B D3STROYER_A     100      606       3,37
+C StalkerHunter   100      176       15,29
+D forsurewinners  100      170       26,14
+Winner: B (D3STROYER_A) with 606 gold
+================================================================================
+Game 37 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      341       32,44
+B D3STROYER_A     100      367       5,40
+C StalkerHunter   100      205       39,19
+D forsurewinners  100      136       9,30
+Winner: B (D3STROYER_A) with 367 gold
+================================================================================
+Game 38 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      429       22,8
+B D3STROYER_A     100      268       14,33
+C StalkerHunter   100      0         26,19
+D forsurewinners  100      494       24,24
+Winner: D (forsurewinners) with 494 gold
+================================================================================
+Game 39 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      343       33,43
+B D3STROYER_A     100      254       8,37
+C StalkerHunter   100      329       17,18
+D forsurewinners  100      56        26,19
+Winner: A (Team_1_GoldDigger) with 343 gold
+================================================================================
+Game 40 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       6,43
+B D3STROYER_A     100      348       7,40
+C StalkerHunter   100      132       30,35
+D forsurewinners  100      110       42,36
+Winner: A (Team_1_GoldDigger) with 349 gold
+================================================================================
+Game 41 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      544       43,36
+B D3STROYER_A     100      351       8,37
+C StalkerHunter   100      79        15,33
+D forsurewinners  100      221       26,33
+Winner: A (Team_1_GoldDigger) with 544 gold
+================================================================================
+Game 42 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      347       20,10
+B D3STROYER_A     100      340       13,38
+C StalkerHunter   100      30        10,24
+D forsurewinners  100      417       44,38
+Winner: D (forsurewinners) with 417 gold
+================================================================================
+Game 43 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      419       6,29
+B D3STROYER_A     100      391       3,33
+C StalkerHunter   100      1         6,8
+D forsurewinners  100      170       28,16
+Winner: A (Team_1_GoldDigger) with 419 gold
+================================================================================
+Game 44 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      441       1,44
+B D3STROYER_A     100      495       11,31
+C StalkerHunter   100      83        15,33
+D forsurewinners  100      87        28,33
+Winner: B (D3STROYER_A) with 495 gold
+================================================================================
+Game 45 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      603       46,27
+B D3STROYER_A     100      76        28,22
+C StalkerHunter   100      122       14,23
+D forsurewinners  100      375       2,3
+Winner: A (Team_1_GoldDigger) with 603 gold
+================================================================================
+Game 46 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      323       45,20
+B D3STROYER_A     100      20        25,29
+C StalkerHunter   100      185       28,31
+D forsurewinners  100      521       9,10
+Winner: D (forsurewinners) with 521 gold
+================================================================================
+Game 47 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      436       47,11
+B D3STROYER_A     100      687       3,31
+C StalkerHunter   100      1         10,21
+D forsurewinners  100      294       30,45
+Winner: B (D3STROYER_A) with 687 gold
+================================================================================
+Game 48 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      503       44,33
+B D3STROYER_A     100      441       3,40
+C StalkerHunter   100      216       12,14
+D forsurewinners  100      200       8,5
+Winner: A (Team_1_GoldDigger) with 503 gold
+================================================================================
+Game 49 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      1055      39,39
+B D3STROYER_A     100      377       8,37
+C StalkerHunter   80       341       16,26
+D forsurewinners  81       118       17,25
+Winner: A (Team_1_GoldDigger) with 1055 gold
+================================================================================
+Game 50 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      474       36,11
+B D3STROYER_A     93       1         36,10
+C StalkerHunter   100      70        28,15
+D forsurewinners  100      250       16,4
+Winner: A (Team_1_GoldDigger) with 474 gold
+================================================================================
+Game 51 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      342       12,4
+B D3STROYER_A     100      528       10,31
+C StalkerHunter   100      9         26,33
+D forsurewinners  100      866       39,33
+Winner: D (forsurewinners) with 866 gold
+================================================================================
+Game 52 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      314       5,34
+B D3STROYER_A     100      736       3,40
+C StalkerHunter   100      0         11,25
+D forsurewinners  100      191       16,24
+Winner: B (D3STROYER_A) with 736 gold
+================================================================================
+Game 53 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       0,45
+B D3STROYER_A     100      316       6,30
+C StalkerHunter   100      119       29,29
+D forsurewinners  100      264       45,27
+Winner: A (Team_1_GoldDigger) with 349 gold
+================================================================================
+Game 54 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      344       19,12
+B D3STROYER_A     100      523       5,35
+C StalkerHunter   100      689       45,21
+D forsurewinners  100      289       3,16
+Winner: C (StalkerHunter) with 689 gold
+================================================================================
+Game 55 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      638       38,17
+B D3STROYER_A     100      353       18,44
+C StalkerHunter   100      262       13,28
+D forsurewinners  100      331       42,12
+Winner: A (Team_1_GoldDigger) with 638 gold
+================================================================================
+Game 56 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      465       6,40
+B D3STROYER_A     100      361       8,37
+C StalkerHunter   100      411       48,0
+D forsurewinners  100      217       7,36
+Winner: A (Team_1_GoldDigger) with 465 gold
+================================================================================
+Game 57 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      335       32,35
+B D3STROYER_A     100      410       13,31
+C StalkerHunter   100      211       28,13
+D forsurewinners  100      81        38,25
+Winner: B (D3STROYER_A) with 410 gold
+================================================================================
+Game 58 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      710       8,45
+B D3STROYER_A     100      25        19,25
+C StalkerHunter   100      151       15,33
+D forsurewinners  100      440       26,31
+Winner: A (Team_1_GoldDigger) with 710 gold
+================================================================================
+Game 59 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      346       22,10
+B D3STROYER_A     100      45        19,24
+C StalkerHunter   100      28        33,16
+D forsurewinners  100      501       22,42
+Winner: D (forsurewinners) with 501 gold
+================================================================================
+Game 60 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       22,10
+B D3STROYER_A     100      26        28,22
+C StalkerHunter   100      237       15,33
+D forsurewinners  100      218       10,24
+Winner: A (Team_1_GoldDigger) with 349 gold
+================================================================================
+Game 61 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      432       10,11
+B D3STROYER_A     100      306       13,31
+C StalkerHunter   100      1         36,27
+D forsurewinners  100      308       9,4
+Winner: A (Team_1_GoldDigger) with 432 gold
+================================================================================
+Game 62 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      549       29,46
+B D3STROYER_A     100      284       12,32
+C StalkerHunter   100      250       14,26
+D forsurewinners  100      113       33,36
+Winner: A (Team_1_GoldDigger) with 549 gold
+================================================================================
+Game 63 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       14,42
+B D3STROYER_A     100      342       13,38
+C StalkerHunter   100      84        30,35
+D forsurewinners  100      105       10,29
+Winner: A (Team_1_GoldDigger) with 349 gold
+================================================================================
+Game 64 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      452       8,43
+B D3STROYER_A     100      358       13,31
+C StalkerHunter   100      41        20,35
+D forsurewinners  100      126       18,25
+Winner: A (Team_1_GoldDigger) with 452 gold
+================================================================================
+Game 65 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      346       12,4
+B D3STROYER_A     100      470       8,37
+C StalkerHunter   100      259       14,36
+D forsurewinners  100      346       17,32
+Winner: B (D3STROYER_A) with 470 gold
+================================================================================
+Game 66 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      337       24,37
+B D3STROYER_A     100      590       3,40
+C StalkerHunter   100      670       46,28
+D forsurewinners  100      276       18,4
+Winner: C (StalkerHunter) with 670 gold
+================================================================================
+Game 67 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      522       34,7
+B D3STROYER_A     100      497       13,38
+C StalkerHunter   100      31        27,29
+D forsurewinners  100      229       38,17
+Winner: A (Team_1_GoldDigger) with 522 gold
+================================================================================
+Game 68 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      348       20,2
+B D3STROYER_A     100      335       20,41
+C StalkerHunter   100      46        18,19
+D forsurewinners  100      324       27,41
+Winner: A (Team_1_GoldDigger) with 348 gold
+================================================================================
+Game 69 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      449       40,7
+B D3STROYER_A     100      441       13,38
+C StalkerHunter   100      466       15,25
+D forsurewinners  100      587       45,27
+Winner: D (forsurewinners) with 587 gold
+================================================================================
+Game 70 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      622       46,1
+B D3STROYER_A     100      527       27,44
+C StalkerHunter   100      31        11,18
+D forsurewinners  100      286       20,29
+Winner: A (Team_1_GoldDigger) with 622 gold
+================================================================================
+Game 71 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      562       36,14
+B D3STROYER_A     100      487       3,40
+C StalkerHunter   100      70        29,34
+D forsurewinners  100      47        18,17
+Winner: A (Team_1_GoldDigger) with 562 gold
+================================================================================
+Game 72 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      339       36,12
+B D3STROYER_A     100      485       11,40
+C StalkerHunter   100      307       36,32
+D forsurewinners  100      76        23,27
+Winner: B (D3STROYER_A) with 485 gold
+================================================================================
+Game 73 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       0,8
+B D3STROYER_A     100      311       13,31
+C StalkerHunter   100      89        14,26
+D forsurewinners  100      236       15,37
+Winner: A (Team_1_GoldDigger) with 349 gold
+================================================================================
+Game 74 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      346       5,34
+B D3STROYER_A     100      410       13,38
+C StalkerHunter   100      90        15,33
+D forsurewinners  100      101       15,37
+Winner: B (D3STROYER_A) with 410 gold
+================================================================================
+Game 75 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      447       43,19
+B D3STROYER_A     100      290       6,31
+C StalkerHunter   100      118       18,14
+D forsurewinners  100      271       14,4
+Winner: A (Team_1_GoldDigger) with 447 gold
+================================================================================
+Game 76 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      574       35,8
+B D3STROYER_A     100      407       3,35
+C StalkerHunter   100      115       15,25
+D forsurewinners  100      338       10,4
+Winner: A (Team_1_GoldDigger) with 574 gold
+================================================================================
+Game 77 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      345       22,7
+B D3STROYER_A     100      900       5,30
+C StalkerHunter   100      340       34,15
+D forsurewinners  100      191       36,42
+Winner: B (D3STROYER_A) with 900 gold
+================================================================================
+Game 78 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      335       39,16
+B D3STROYER_A     100      200       19,25
+C StalkerHunter   100      52        30,35
+D forsurewinners  100      415       24,24
+Winner: D (forsurewinners) with 415 gold
+================================================================================
+Game 79 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       29,38
+B D3STROYER_A     100      103       28,22
+C StalkerHunter   100      155       16,33
+D forsurewinners  100      394       21,25
+Winner: D (forsurewinners) with 394 gold
+================================================================================
+Game 80 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      429       14,2
+B D3STROYER_A     100      402       8,25
+C StalkerHunter   100      166       23,27
+D forsurewinners  100      52        18,16
+Winner: A (Team_1_GoldDigger) with 429 gold
+================================================================================
+Game 81 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      593       48,5
+B D3STROYER_A     100      185       19,25
+C StalkerHunter   100      39        13,14
+D forsurewinners  100      315       26,25
+Winner: A (Team_1_GoldDigger) with 593 gold
+================================================================================
+Game 82 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      608       45,42
+B D3STROYER_A     100      335       13,31
+C StalkerHunter   100      80        29,28
+D forsurewinners  100      176       41,18
+Winner: A (Team_1_GoldDigger) with 608 gold
+================================================================================
+Game 83 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      339       4,29
+B D3STROYER_A     100      418       13,38
+C StalkerHunter   100      196       16,32
+D forsurewinners  100      306       19,33
+Winner: B (D3STROYER_A) with 418 gold
+================================================================================
+Game 84 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      643       36,23
+B D3STROYER_A     100      439       3,40
+C StalkerHunter   100      111       14,24
+D forsurewinners  100      258       11,4
+Winner: A (Team_1_GoldDigger) with 643 gold
+================================================================================
+Game 85 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      416       3,26
+B D3STROYER_A     100      493       6,30
+C StalkerHunter   100      56        15,33
+D forsurewinners  100      246       24,24
+Winner: B (D3STROYER_A) with 493 gold
+================================================================================
+Game 86 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      461       11,18
+B D3STROYER_A     100      463       13,38
+C StalkerHunter   100      520       41,20
+D forsurewinners  100      129       24,24
+Winner: C (StalkerHunter) with 520 gold
+================================================================================
+Game 87 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      450       2,16
+B D3STROYER_A     100      0         16,38
+C StalkerHunter   100      338       31,12
+D forsurewinners  100      426       40,25
+Winner: A (Team_1_GoldDigger) with 450 gold
+================================================================================
+Game 88 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       7,10
+B D3STROYER_A     100      468       11,40
+C StalkerHunter   100      153       32,40
+D forsurewinners  100      550       30,26
+Winner: D (forsurewinners) with 550 gold
+================================================================================
+Game 89 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      550       48,7
+B D3STROYER_A     100      300       8,37
+C StalkerHunter   100      131       32,45
+D forsurewinners  100      198       37,14
+Winner: A (Team_1_GoldDigger) with 550 gold
+================================================================================
+Game 90 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      338       21,36
+B D3STROYER_A     100      423       4,30
+C StalkerHunter   100      49        7,10
+D forsurewinners  100      113       18,16
+Winner: B (D3STROYER_A) with 423 gold
+================================================================================
+Game 91 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      548       47,35
+B D3STROYER_A     100      30        19,25
+C StalkerHunter   100      392       37,26
+D forsurewinners  100      131       17,32
+Winner: A (Team_1_GoldDigger) with 548 gold
+================================================================================
+Game 92 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      439       37,4
+B D3STROYER_A     100      463       22,41
+C StalkerHunter   100      313       6,9
+D forsurewinners  100      533       41,42
+Winner: D (forsurewinners) with 533 gold
+================================================================================
+Game 93 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       7,36
+B D3STROYER_A     100      460       8,37
+C StalkerHunter   100      152       48,43
+D forsurewinners  100      123       24,38
+Winner: B (D3STROYER_A) with 460 gold
+================================================================================
+Game 94 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      762       34,25
+B D3STROYER_A     100      569       8,40
+C StalkerHunter   100      101       27,20
+D forsurewinners  100      153       24,24
+Winner: A (Team_1_GoldDigger) with 762 gold
+================================================================================
+Game 95 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      341       0,13
+B D3STROYER_A     100      667       13,38
+C StalkerHunter   100      515       45,27
+D forsurewinners  100      399       20,13
+Winner: B (D3STROYER_A) with 667 gold
+================================================================================
+Game 96 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      455       6,9
+B D3STROYER_A     100      385       12,33
+C StalkerHunter   100      220       15,25
+D forsurewinners  100      216       42,26
+Winner: A (Team_1_GoldDigger) with 455 gold
+================================================================================
+Game 97 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      584       45,12
+B D3STROYER_A     100      470       17,27
+C StalkerHunter   100      170       24,21
+D forsurewinners  100      253       44,25
+Winner: A (Team_1_GoldDigger) with 584 gold
+================================================================================
+Game 98 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       30,35
+B D3STROYER_A     100      316       13,31
+C StalkerHunter   100      214       14,29
+D forsurewinners  100      194       15,35
+Winner: A (Team_1_GoldDigger) with 349 gold
+================================================================================
+Game 99 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      349       18,9
+B D3STROYER_A     100      436       13,37
+C StalkerHunter   100      364       36,15
+D forsurewinners  100      183       24,24
+Winner: B (D3STROYER_A) with 436 gold
+================================================================================
+Game 100 final scoreboard
+Player             Health   Gold      Position
+A Team_1_GoldDigg 100      667       40,1
+B D3STROYER_A     100      788       11,40
+C StalkerHunter   100      0         28,13
+D forsurewinners  100      268       16,29
+Winner: B (D3STROYER_A) with 788 gold
+================================================================================
+Overall results after 100 games
+A (Team_1_GoldDigger): 54 wins
+B (D3STROYER_A): 28 wins
+D (forsurewinners): 14 wins
+C (StalkerHunter): 4 wins
