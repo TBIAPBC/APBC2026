@@ -1,0 +1,16 @@
+############################################################
+# Test input - HVD possible break case
+# 3x3 grid (N=3, M=3)
+# east and diag both have row length M-1=2
+# no blank/comment line separating east and diag blocks
+#
+# north-south streets (2 rows x 3 cols)
+1 6 2
+4 0 7
+# west-east streets (3 rows x 2 cols)
+# directly followed by diagonal (2 rows x 2 cols) with no separator
+3 3
+3 2
+5 7
+6 7
+4 8
