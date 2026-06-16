@@ -38,10 +38,14 @@ def plot_stats(sim, filename, plots=None, viz=False):
         if not metrics:
             raise ValueError("No stats plots selected.")
     
-    # Use matplotlib's default color cycle to match the video trails
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
-    colors = colors * (num_players // len(colors) + 1)  # repeat if more players than colors
+    # Use the exact same player colors as the visualization
+    if hasattr(sim, "illustrator") and hasattr(sim.illustrator, "COLORS"):
+        colors = list(sim.illustrator.COLORS)
+    else:
+        # fallback, only needed if plot_stats is called before sim.play()
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+        colors = colors * (num_players // len(colors) + 1)
     
     # choose number of columns (1..3) that minimises empty subplots
     max_cols = min(3, len(metrics))
