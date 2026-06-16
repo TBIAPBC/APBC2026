@@ -32,18 +32,16 @@ python3 runRobotRace.py --map Maps/floodfill_map.dat --number 250 --games 100  >
 
 ### Maze 1000 solo
 ```bash
-python3 runRobotRace.py --map Maps/maze_map.dat --number 250 --allow_jumps --games 100 --viz Tournament/Maze_1000_solo_jumps/race.mp4 > Tournament/Maze_1000_solo_jumps/race_summary.txt
+python3 runRobotRace.py --map Maps/maze_map.dat --number 1000 --allow_jumps --games 100 > Tournament/Maze_1000_solo_jumps/race_summary.txt
 ```
-
-
-
 
 
 ### Maze 250 duet
 ```bash
-python3 runRobotRace_buddy.py --map Maps/maze_map.dat --number 250 --games 50 --viz Tournament/Maze_250_duet/race.mp4  > Tournament/Maze_250_duet/race_summary.txt
+python3 runRobotRace_buddy.py --map Maps/maze_map.dat --number 250 --games 100  > Tournament/Maze_250_duet/race_summary.txt
 ```
 
 
 
 
+Tournament/Maze_1000_solo_jumps/
