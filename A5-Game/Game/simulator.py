@@ -154,6 +154,7 @@ class Simulator(object):
 		print(self)
 
 		if self.illustrator.vizfile:
+			print("Start ilustration for vizfile")
 			self.illustrator._illustrate()
 		if self.pov_recorder.prefix:
 			self.pov_recorder.render_all(self.illustrator.FRAME_PER_SECOND)

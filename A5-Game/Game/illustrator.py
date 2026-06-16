@@ -279,7 +279,6 @@ class Illustrator:
             writer = "pillow"
         else:
             raise ValueError(f"Unsupported animation format: {ext}. Use .gif or .mp4")
-
         animation.save(
             self.vizfile,
             writer=writer,

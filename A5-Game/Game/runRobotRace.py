@@ -51,10 +51,10 @@ def main():
         viz_output = str(PLOTS_DIR / Path(args.viz).name)
 
     robot_module_names = {
-        "Test": "test-RobotRace",
-        "Beatme": "beatme-RobotRace",
         "GoldDiggers": "GoldDiggers-RobotRace",
-        "Adlhartm": "adlhartm-RobotRace",
+        "D3STROYER": "D3STROYER_main_tournament",
+        "XAE-12": "stalkerhunter-RobotRace",
+        "forsurewinners": "forsurewinners",
     }
     robotmodules = { m:__import__(m) for m in robot_module_names.values() }
 
